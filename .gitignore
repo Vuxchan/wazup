@@ -1,0 +1,86 @@
+# ==============================
+# Logs
+# ==============================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==============================
+# Node / Frontend
+# ==============================
+node_modules/
+dist/
+dist-ssr/
+.next/
+out/
+coverage/
+
+*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==============================
+# Python / FastAPI
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# virtual env
+venv/
+.env/
+.venv/
+
+# python packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# test / coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+
+# FastAPI / DB
+*.db
+*.sqlite3
+
+# environment variables
+.env
+
+# ==============================
+# OS files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# IDE
+# ==============================
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
