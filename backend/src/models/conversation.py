@@ -48,5 +48,10 @@ class Conversation(SQLModel, table=True):
     )
     
     # Relationships
-    messages: List["Message"] =  Relationship(back_populates="conversation")
+    messages: List["Message"] =  Relationship(
+        back_populates="conversation",
+        sa_relationship_kwargs={
+            "foreign_keys": "[Message.conversation_id]"
+        }
+    )
     participants: List["ConversationParticipant"] = Relationship(back_populates="conversation")

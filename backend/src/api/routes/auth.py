@@ -38,7 +38,7 @@ def signin(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     
-    access_token_expires = timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     refresh_token = token_urlsafe(32)
     crud.create_refresh_token(session, user.id, refresh_token, timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_TIME))

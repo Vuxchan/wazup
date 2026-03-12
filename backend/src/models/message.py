@@ -41,5 +41,10 @@ class Message(SQLModel, table=True):
     )
 
     # Relationships
-    conversation: "Conversation" = Relationship(back_populates="messages")
+    conversation: "Conversation" = Relationship(
+        back_populates="messages",
+        sa_relationship_kwargs={
+            "foreign_keys": "[Message.conversation_id]"
+        }
+    )
     sender: "User" = Relationship()
