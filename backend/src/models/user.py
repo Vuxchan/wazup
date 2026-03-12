@@ -1,8 +1,11 @@
-from typing import Optional
-from sqlmodel import Field, SQLModel
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime, timezone
 from sqlalchemy import DateTime
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from .conversation_participant import ConversationParticipant
 
 class User(SQLModel, table=True):
     id: UUID = Field(
@@ -65,3 +68,6 @@ class User(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc),
         sa_type=DateTime(timezone=True),  
     )
+
+    # Relationships
+    conversations: list["ConversationParticipant"] = Relationship(back_populates="user")
