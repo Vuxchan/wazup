@@ -1,4 +1,5 @@
 from sqlmodel import Session, select, and_, or_
+from sqlalchemy.orm import selectinload
 from src.models.user import User
 from src.models.friendship import Friendship
 from src.models.friend_request import FriendRequest
@@ -9,7 +10,7 @@ from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
 from uuid import UUID
 from hashlib import sha256
-from typing import Optional
+from typing import Optional, List
 
 DUMMY_HASH = "$2b$12$YLLg/ZlJqYLAANUOXuT3OuxYGMXtqgAUNohYmD5BzUJKH7gPpo7Fm"
 
@@ -78,6 +79,14 @@ def create_friendship(session: Session, friend_request: FriendRequest) -> Friend
 def delete_friend_req(session: Session, friend_request: FriendRequest) -> None:
     session.delete(friend_request)
     session.commit()
+
+def get_all_friendships(session: Session, user_id: UUID) -> List[Friendship]:
+    statement = select(Friendship).options(
+        selectinload(Friendship.user_A), 
+        selectinload(Friendship.user_B)
+    ).where(or_(Friendship.user_id == user_id, Friendship.friend_id == user_id))
+    friendships = session.exec(statement).all()
+    return friendships
 
 def authenticate(session: Session, email: str, password: str) -> User | None:
     user = get_user_by_email(session, email)

@@ -5,7 +5,7 @@ from src.schemas.user import UserPublic
 from src.schemas.friend import Invitation
 from src import crud
 from uuid import UUID
-from typing import Any
+from typing import Any, List
 
 router = APIRouter(tags=["friend"], prefix="/friend")
 
@@ -54,3 +54,11 @@ def decline_friend_request(session: SessionDep, current_user: CurrentUser, reque
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
     
     crud.delete_friend_req(session, friend_request)
+
+@router.get("")
+def get_all_friends(session: SessionDep, current_user: CurrentUser) -> List[UserPublic]:
+    user_id = current_user.id
+    friendships = crud.get_all_friendships(session, user_id)
+    friends = [f.get_friend(user_id) for f in friendships]
+    friends_public = [UserPublic.model_validate(u) for u in friends]
+    return friends_public
