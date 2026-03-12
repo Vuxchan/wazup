@@ -59,6 +59,22 @@ def create_friend_request(session: Session, from_user: UUID, invitation: Invitat
     session.refresh(friend_request)
     return friend_request
 
+def get_request_by_id(session: Session, request_id: UUID) -> Optional[FriendRequest]:
+    statement = select(FriendRequest).where(FriendRequest.id == request_id)
+    friend_request = session.exec(statement).first()
+    return friend_request
+
+def create_friendship(session: Session, friend_request: FriendRequest) -> Friendship:
+    friendship = Friendship(
+        user_id=friend_request.from_user_id,
+        friend_id=friend_request.to_user_id
+    )
+    session.add(friendship)
+    session.delete(friend_request)
+    session.commit()
+    session.refresh(friendship)
+    return friendship
+
 def authenticate(session: Session, email: str, password: str) -> User | None:
     user = get_user_by_email(session, email)
     if not user:
