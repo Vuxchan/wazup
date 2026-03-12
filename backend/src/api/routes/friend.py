@@ -42,3 +42,15 @@ def accept_friend_request(session: SessionDep, current_user: CurrentUser, reques
     crud.create_friendship(session, friend_request)
 
     return from_user
+
+@router.post("/requests/{request_id}/decline", status_code=status.HTTP_204_NO_CONTENT)
+def decline_friend_request(session: SessionDep, current_user: CurrentUser, request_id: UUID) -> None:
+    user_id = current_user.id
+    friend_request = crud.get_request_by_id(session, request_id)
+    if not friend_request:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+    
+    if friend_request.to_user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+    
+    crud.delete_friend_req(session, friend_request)

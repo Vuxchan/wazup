@@ -75,6 +75,10 @@ def create_friendship(session: Session, friend_request: FriendRequest) -> Friend
     session.refresh(friendship)
     return friendship
 
+def delete_friend_req(session: Session, friend_request: FriendRequest) -> None:
+    session.delete(friend_request)
+    session.commit()
+
 def authenticate(session: Session, email: str, password: str) -> User | None:
     user = get_user_by_email(session, email)
     if not user:
