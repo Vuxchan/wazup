@@ -4,7 +4,7 @@ from src.models.user import User
 from src.models.friendship import Friendship
 from src.models.friend_request import FriendRequest
 from src.schemas.user import UserCreate
-from src.schemas.friend import Invitation
+from src.schemas.friend import Invitation, FriendRequests
 from src.core.security import Hasher
 from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
@@ -88,7 +88,19 @@ def get_all_friendships(session: Session, user_id: UUID) -> List[Friendship]:
     friendships = session.exec(statement).all()
     return friendships
 
-def authenticate(session: Session, email: str, password: str) -> User | None:
+def get_all_requests(session: Session, user_id: UUID) -> FriendRequests:
+    statement = select(FriendRequest).options(
+        selectinload(FriendRequest.sent_by),
+        selectinload(FriendRequest.received_by)
+    ).where(or_(FriendRequest.to_user_id == user_id, FriendRequest.from_user_id == user_id))
+    requests = session.exec(statement).all()
+
+    sent = []
+    received = []
+    list(map(lambda r: received.append(r) if r.to_user_id == user_id else sent.append(r), requests))
+    return FriendRequests(received=received, sent=sent)
+
+def authenticate(session: Session, email: str, password: str) -> Optional[User]:
     user = get_user_by_email(session, email)
     if not user:
         Hasher.verify_password(password, DUMMY_HASH)

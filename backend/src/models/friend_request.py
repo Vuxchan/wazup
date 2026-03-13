@@ -1,7 +1,10 @@
-from sqlmodel import SQLModel, Field, DateTime, UniqueConstraint, CheckConstraint
+from sqlmodel import SQLModel, Field, DateTime, UniqueConstraint, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .user import User
 
 class FriendRequest(SQLModel, table=True):
     __table_args__ = (
@@ -31,4 +34,16 @@ class FriendRequest(SQLModel, table=True):
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_type=DateTime(timezone=True),  
+    )
+
+    # Relationships
+    sent_by: "User" = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "FriendRequest.from_user_id"
+        }
+    )
+    received_by: "User" = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "FriendRequest.to_user_id"
+        }
     )

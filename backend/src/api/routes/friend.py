@@ -2,10 +2,10 @@ from fastapi import APIRouter, status, HTTPException
 from src.api.deps import SessionDep, CurrentUser
 from src.models.friend_request import FriendRequest
 from src.schemas.user import UserPublic
-from src.schemas.friend import Invitation
+from src.schemas.friend import Invitation, FriendRequestsResponse
 from src import crud
 from uuid import UUID
-from typing import Any, List
+from typing import Any, List, Tuple
 
 router = APIRouter(tags=["friend"], prefix="/friend")
 
@@ -55,10 +55,18 @@ def decline_friend_request(session: SessionDep, current_user: CurrentUser, reque
     
     crud.delete_friend_req(session, friend_request)
 
-@router.get("")
-def get_all_friends(session: SessionDep, current_user: CurrentUser) -> List[UserPublic]:
+@router.get("", response_model=List[UserPublic])
+def get_all_friends(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     friendships = crud.get_all_friendships(session, user_id)
     friends = [f.get_friend(user_id) for f in friendships]
-    friends_public = [UserPublic.model_validate(u) for u in friends]
-    return friends_public
+    return friends
+
+@router.get("/requests", response_model=FriendRequestsResponse)
+def get_friend_requests(session: SessionDep, current_user: CurrentUser) -> Any:
+    user_id = current_user.id
+    requests = crud.get_all_requests(session, user_id)
+    return {
+        "received": [r.sent_by for r in requests.received],
+        "sent": [r.received_by for r in requests.sent]
+    }

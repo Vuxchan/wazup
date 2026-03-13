@@ -39,12 +39,12 @@ class Friendship(SQLModel, table=True):
 
     # Relationships
     user_A: "User" = Relationship(
-        sa_relationship_kwargs= {
+        sa_relationship_kwargs={
             "foreign_keys": "Friendship.user_id"
         }
     )
     user_B: "User" = Relationship(
-        sa_relationship_kwargs= {
+        sa_relationship_kwargs={
             "foreign_keys": "Friendship.friend_id"
         }
     )
