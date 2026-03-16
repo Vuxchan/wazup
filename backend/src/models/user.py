@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime, timezone
 from sqlalchemy import DateTime
@@ -70,4 +70,4 @@ class User(SQLModel, table=True):
     )
 
     # Relationships
-    conversations: list["ConversationParticipant"] = Relationship(back_populates="user")
+    conversations: List["ConversationParticipant"] = Relationship(back_populates="user")

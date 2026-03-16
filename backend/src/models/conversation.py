@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, DateTime, Relationship, Index
+from sqlmodel import SQLModel, Field, DateTime, Relationship, Index, desc
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from enum import Enum
@@ -7,6 +7,7 @@ from typing import List, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from .message import Message
     from .conversation_participant import ConversationParticipant
+    from .conversation_group import ConversationGroup
 
 class ConversationType(str, Enum):
     DIRECT = "direct"
@@ -14,7 +15,7 @@ class ConversationType(str, Enum):
 
 class Conversation(SQLModel, table=True):
     __table_args__ = (
-        Index("idx_conversation_last_message", "last_message_at"),
+        Index("idx_conversation_last_message", desc("last_message_at")),
     )
 
     id: UUID = Field(
@@ -27,14 +28,10 @@ class Conversation(SQLModel, table=True):
         nullable=False
     )
 
-    created_by: UUID = Field(
-        foreign_key="user.id",
-        index=True
-    )
-
     last_message_id: Optional[UUID] = Field(
         default=None,
-        foreign_key="message.id"
+        foreign_key="message.id",
+        ondelete="SET NULL"
     )
 
     last_message_at: Optional[datetime] = Field(
@@ -51,7 +48,13 @@ class Conversation(SQLModel, table=True):
     messages: List["Message"] =  Relationship(
         back_populates="conversation",
         sa_relationship_kwargs={
-            "foreign_keys": "[Message.conversation_id]"
+            "foreign_keys": "Message.conversation_id"
         }
     )
     participants: List["ConversationParticipant"] = Relationship(back_populates="conversation")
+    group: Optional["ConversationGroup"] = Relationship(back_populates="conversation")
+    last_message: Optional["Message"] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "Conversation.last_message_id"
+        }
+    )

@@ -1,17 +1,17 @@
 from sqlmodel import SQLModel
 from uuid import UUID
-from typing import Optional, TYPE_CHECKING, List
+from typing import Optional, List
 from src.models.friend_request import FriendRequest
 from .user import UserPublic
 
-class Invitation(SQLModel):
+class FriendRequestCreate(SQLModel):
     to: UUID
     request_message: Optional[str]
 
-class FriendRequests(SQLModel):
+class FriendRequestFilter(SQLModel):
     received: List[FriendRequest]
     sent: List[FriendRequest] 
 
-class FriendRequestsResponse(SQLModel):
+class FriendRequestPublic(SQLModel):
     received: List[UserPublic]
     sent: List[UserPublic] 

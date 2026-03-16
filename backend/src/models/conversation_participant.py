@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from .conversation import Conversation
     from .user import User
+    from .message import Message
 
 class Role(str, Enum):
     HOST = "host"
@@ -15,6 +16,7 @@ class Role(str, Enum):
 class ConversationParticipant(SQLModel, table=True):
     __table_args__ = (
         Index("idx_user_conversations", "user_id", "conversation_id"),
+        Index("idx_conv_participants", "conversation_id"),
     )
 
     conversation_id: UUID = Field(
@@ -44,3 +46,8 @@ class ConversationParticipant(SQLModel, table=True):
     # Relationships
     conversation: "Conversation" = Relationship(back_populates="participants")
     user: "User" = Relationship(back_populates="conversations")
+    last_read_message: Optional["Message"] = Relationship(
+        sa_relationship_kwargs={
+            "foreign_keys": "ConversationParticipant.last_read_message_id"
+        }
+    )

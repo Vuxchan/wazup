@@ -14,7 +14,7 @@ class MessageType(str, Enum):
 
 class Message(SQLModel, table=True):
     __table_args__ = (
-        Index("idx_message_conversation_created_desc", "conversation_id", desc("created_at")),
+        Index("idx_message_conversation_created_desc", "conversation_id", desc("created_at"), desc("id")),
     )
 
     id: UUID = Field(
@@ -44,7 +44,7 @@ class Message(SQLModel, table=True):
     conversation: "Conversation" = Relationship(
         back_populates="messages",
         sa_relationship_kwargs={
-            "foreign_keys": "[Message.conversation_id]"
+            "foreign_keys": "Message.conversation_id"
         }
     )
     sender: "User" = Relationship()
