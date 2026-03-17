@@ -21,7 +21,7 @@ class UserPublic(SQLModel):
     id: UUID
     email: str
     username: str
-    displayed_name: Optional[str]
+    display_name: Optional[str]
     avatar_url: Optional[str]
     bio: Optional[str]
     phone: Optional[str]

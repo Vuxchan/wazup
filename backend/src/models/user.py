@@ -33,7 +33,7 @@ class User(SQLModel, table=True):
         max_length=50
     )
 
-    displayed_name: str = Field(
+    display_name: str = Field(
         default=None,
         max_length=100,
         nullable=False

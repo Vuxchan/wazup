@@ -128,7 +128,7 @@ def create_user(session: Session, user_create: UserCreate) -> User:
         user_create, 
         update={
             'hashed_password': Hasher.get_password_hash(user_create.password),
-            'displayed_name': f"{user_create.last_name} {user_create.first_name}"
+            'display_name': f"{user_create.last_name} {user_create.first_name}"
             }
         )
     session.add(user)
@@ -223,7 +223,7 @@ def create_group_conversation(session: Session, member_ids: List[UUID], name: st
     group = ConversationGroup(
         conversation_id=conversation.id,
         created_by=member_ids[0],
-        group_name=name
+        name=name
     )
     session.add(group)
 

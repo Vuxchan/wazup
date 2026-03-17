@@ -17,7 +17,7 @@ class ConversationGroup(SQLModel, table=True):
         nullable=True
     )
 
-    group_name: Optional[str] = None
+    name: Optional[str] = None
 
     avatar_group_url: Optional[str] = None
 

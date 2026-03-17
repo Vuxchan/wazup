@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from src.models import Conversation, ConversationType
-from src.schemas import ConversationCreate, BaseConversationPublic, MessagePagePublic
+from src.schemas import ConversationCreate, BaseConversationPublic, MessagePagePublic, ConversationsResponse
 from src import crud
 from typing import List, Optional
 from uuid import UUID
@@ -39,12 +39,14 @@ def create_conversation(session: SessionDep, current_user: CurrentUser, data: Co
 
     return conversation
 
-@router.get("/", status_code=status.HTTP_200_OK)
-def get_conversations(session: SessionDep, current_user: CurrentUser) -> List[BaseConversationPublic]:
+@router.get("", status_code=status.HTTP_200_OK)
+def get_conversations(session: SessionDep, current_user: CurrentUser) -> ConversationsResponse:
     user_id = current_user.id
     conversations = crud.get_all_conversations(session, user_id)
     base_conversations = [BaseConversationPublic.from_base_conversation(c) for c in conversations]
-    return base_conversations
+    return ConversationsResponse(
+        conversations=base_conversations
+    )
 
 @router.get("/{conversation_id}/messages/", status_code=status.HTTP_200_OK)
 def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> MessagePagePublic:
