@@ -4,33 +4,44 @@ import SignUpPage from "./pages/SignupPage";
 import ChatAppPage from "./pages/ChatAppPage";
 import {Toaster} from "sonner"
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { useThemeStore } from "./stores/useThemeStore";
+import { useEffect } from "react";
 
 function App() {
+    const {isDark, setTheme} = useThemeStore();
+
+    useEffect(() => {
+        setTheme(isDark);
+    }, [isDark]);
+
     return <>
-        <Toaster/>
-        <BrowserRouter>
-            <Routes>
-                {/* public routes */}
-                <Route
-                    path='/signin'
-                    element={<SignInPage/>}
-                />
-
-                <Route
-                    path='/signup'
-                    element={<SignUpPage/>}
-                />
-
-                {/* protected routes */}
-                <Route element={<ProtectedRoute/>}>
+        <TooltipProvider>
+            <Toaster/>
+            <BrowserRouter>
+                <Routes>
+                    {/* public routes */}
                     <Route
-                        path='/'
-                        element={<ChatAppPage/>}
+                        path='/signin'
+                        element={<SignInPage/>}
                     />
-                </Route>
 
-            </Routes>
-        </BrowserRouter>
+                    <Route
+                        path='/signup'
+                        element={<SignUpPage/>}
+                    />
+
+                    {/* protected routes */}
+                    <Route element={<ProtectedRoute/>}>
+                        <Route
+                            path='/'
+                            element={<ChatAppPage/>}
+                        />
+                    </Route>
+
+                </Routes>
+            </BrowserRouter>
+        </TooltipProvider>
     </>;
 }
 

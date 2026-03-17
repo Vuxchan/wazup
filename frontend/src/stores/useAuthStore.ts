@@ -2,100 +2,116 @@ import { create } from "zustand"
 import { toast } from "sonner"
 import { authService } from "@/services/authService"
 import type { AuthState } from "@/types/store"
+import { persist } from "zustand/middleware";
+import { useChatStore } from "./useChatStore";
+import { User } from "lucide-react";
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-    accessToken: null,
-    user: null,
-    loading: false,
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set, get) => ({
+            accessToken: null,
+            user: null,
+            loading: false,
 
-    setAccessToken(accessToken) {
-        set({accessToken});
-    },
+            setAccessToken(accessToken) {
+                set({accessToken});
+            },
 
-    clearState: () => {
-        set({ accessToken: null, user: null, loading: false });
-    },
+            clearState: () => {
+                set({ accessToken: null, user: null, loading: false });
+                localStorage.clear();
+                useChatStore.getState().reset();
+            },
 
-    signUp: async (username, password, email, firstName, lastName) => {
-        try {
-            set({ loading: true });
+            signUp: async (username, password, email, firstName, lastName) => {
+                try {
+                    set({ loading: true });
 
-            await authService.signUp(username, password, email, firstName, lastName);
+                    await authService.signUp(username, password, email, firstName, lastName);
 
-            toast.success("Login successful! You will be redirected to the login page.");
-        } catch (error) {
-            console.error(error);
-            toast.error("Login failed");
-        } finally {
-            set({ loading: false });
-        }
-    },
+                    toast.success("Login successful! You will be redirected to the login page.");
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Login failed");
+                } finally {
+                    set({ loading: false });
+                }
+            },
 
-    signIn: async (email, password) => {
-        try {
-            set({ loading: true });
+            signIn: async (email, password) => {
+                try {
+                    set({ loading: true });
 
-            const response = await authService.signIn(email, password);
-            const accessToken = response.access_token;
-            get().setAccessToken(accessToken);
+                    localStorage.clear();
+                    useChatStore.getState().reset();
 
-            await get().fetchMe();
+                    const response = await authService.signIn(email, password);
+                    const accessToken = response.access_token;
+                    get().setAccessToken(accessToken);
 
-            toast.success("Welcome back to Moji!");
-        } catch (error) {
-            console.error(error);
-            toast.error("Login failed");
-        } finally {
-            set({ loading: false });
-        }
-    },
+                    await get().fetchMe();
+                    useChatStore.getState().fetchConversations();
 
-    signOut: async () => {
-        try {
-            get().clearState();
+                    toast.success("Welcome back to Moji!");
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Login failed");
+                } finally {
+                    set({ loading: false });
+                }
+            },
 
-            await authService.signOut();
+            signOut: async () => {
+                try {
+                    get().clearState();
 
-            toast.success("Logout successful!")
-        } catch (error) {
-            console.error(error);
-            toast.error("Logout failed")
-        }
-    },
+                    await authService.signOut();
 
-    fetchMe: async () => {
-        try {
-            set({ loading: true })
-            const user = await authService.fetchMe();
+                    toast.success("Logout successful!")
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Logout failed")
+                }
+            },
 
-            set({user});
-        } catch (error) {
-            console.error(error);
-            set({user: null, accessToken: null});
-            toast.error("Error while fetching user data. Please try again!");
-        } finally {
-            set({ loading: false });
-        }
-    },
+            fetchMe: async () => {
+                try {
+                    set({ loading: true })
+                    const user = await authService.fetchMe();
 
-    refresh: async () => {
-        try {
-            set({loading: true})
-            const {user, fetchMe} = get();
+                    set({user});
+                } catch (error) {
+                    console.error(error);
+                    set({user: null, accessToken: null});
+                    toast.error("Error while fetching user data. Please try again!");
+                } finally {
+                    set({ loading: false });
+                }
+            },
 
-            const response = await authService.refresh();
-            const accessToken = response.access_token;
-            get().setAccessToken(accessToken);
+            refresh: async () => {
+                try {
+                    set({loading: true})
+                    const {user, fetchMe} = get();
 
-            if (!user) {
-                await fetchMe();
+                    const response = await authService.refresh();
+                    const accessToken = response.access_token;
+                    get().setAccessToken(accessToken);
+
+                    if (!user) {
+                        await fetchMe();
+                    }
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Your session is expired. Please login!")
+                    get().clearState();
+                } finally {
+                    set({loading: false})
+                }
             }
-        } catch (error) {
-            console.error(error);
-            toast.error("Your session is expired. Please login!")
-            get().clearState();
-        } finally {
-            set({loading: false})
+        }), {
+            name: "auth-storage",
+            partialize: (state) => ({ user: state.user})
         }
-    }
-}))
+    )
+);
