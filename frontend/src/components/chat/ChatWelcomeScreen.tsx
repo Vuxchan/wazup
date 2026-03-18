@@ -9,7 +9,7 @@ const ChatWelcomeScreen = () => {
             <div className="text-center">
                 <div className="size-24 mx-auto mb-6 bg-gradient-chat rounded-full flex items-center justify-center shadow-glow pulse-ring">
                     <span className="text-3xl">
-                        <img src="chat.png" className="size-10 transparent"></img>
+                        <img src="chat.png" className="size-10"></img>
                     </span>
                 </div>
                 <h2 className="text-2xl font-bold mb-2 bg-gradient-chat bg-clip-text text-transparent">Welcome to Moji!</h2>

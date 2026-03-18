@@ -26,7 +26,7 @@ def send_direct_message(session: SessionDep, current_user: CurrentUser, data: Di
     if not conversation:
         conversation = crud.create_direct_conversation(session, sender_id, recipient_id)
     
-    message = crud.create_message(session, conversation.id, sender_id, content)
+    message = crud.create_message(session, conversation.id, sender_id, content, data.img_url)
 
     crud.upd_conv_after_create_msg(session, conversation, message)
 
@@ -48,7 +48,7 @@ def send_group_message(session: SessionDep, current_user: CurrentUser, data: Gro
     if not content or not content.strip():
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No message content")
     
-    message = crud.create_message(session, conversation_id, sender_id, content)
+    message = crud.create_message(session, conversation_id, sender_id, content, data.img_url)
 
     crud.upd_conv_after_create_msg(session, conversation, message)
 

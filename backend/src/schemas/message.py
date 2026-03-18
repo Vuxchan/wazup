@@ -9,12 +9,18 @@ class MessageCreate(SQLModel):
     conversation_id: UUID
 
 class DirectMessageCreate(SQLModel):
+    model_config = config
+
     recipient_id: UUID
     content: str
+    img_url: Optional[str] = None
 
 class GroupMessageCreate(SQLModel):
+    model_config = config
+
     conversation_id: UUID
     content: str
+    img_url: Optional[str] = None
 
 class MessagePublic(SQLModel):
     model_config = config

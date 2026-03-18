@@ -175,11 +175,12 @@ def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: 
     session.refresh(conversation)
     return conversation
 
-def create_message(session: Session, conversation_id: UUID, sender_id: UUID, content: str) -> Message:
+def create_message(session: Session, conversation_id: UUID, sender_id: UUID, content: str, img_url: str) -> Message:
     message = Message(
         conversation_id=conversation_id,
         sender_id=sender_id,
-        content=content
+        content=content,
+        img_url=img_url
     )
     session.add(message)
     session.flush()
