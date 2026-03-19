@@ -14,28 +14,26 @@ async def send_direct_message(session: SessionDep, current_user: CurrentUser, da
     recipient_id = data.recipient_id
     content= data.content
 
-    print("fasdfas")
-
     if sender_id == recipient_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't message yourself")
-    print("fasdfas", sender_id, [recipient_id])
+
     if len(crud.check_friendships(session, sender_id, [recipient_id])) != 0:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You are not friend of each other {recipient_id}")
-    print("fasdfas")
+
     if not content or not content.strip():
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No message content")
-    print("fasdfas")
+
     conversation = crud.get_direct_conversation(session, sender_id, recipient_id)
-    print("fasdfas")
+
     if not conversation:
         conversation = crud.create_direct_conversation(session, sender_id, recipient_id)
-    print("fasdfas")
+
     message = crud.create_message(session, conversation, sender_id, content, data.img_url)
-    print("fasdfas")
+
     crud.upd_conv_after_create_msg(session, conversation, message)
-    print("fasdfas")
+
     await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, conversation))
-    print("fasdfas")
+
     return message
 
 @router.post("/group", status_code=status.HTTP_201_CREATED, response_model=MessagePublic)
