@@ -23,7 +23,7 @@ def get_session() -> Generator[Session, None, None]:
 SessionDep = Annotated[Session, Depends(get_session)]
 TokenDep = Annotated[str, Depends(get_token)]
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
+def get_current_user(session: Session, token: str) -> User:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[security.ALGORITHM])
         token_data = TokenPayload(**payload)
@@ -34,4 +34,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
+def user_dep(session: SessionDep, token: TokenDep):
+    return get_current_user(session, token)
+
+CurrentUser = Annotated[User, Depends(user_dep)]

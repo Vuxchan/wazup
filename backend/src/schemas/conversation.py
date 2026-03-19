@@ -4,6 +4,7 @@ from uuid import UUID
 from datetime import datetime
 from src.models import ConversationType, ConversationParticipant, Message, Conversation, User
 from src.utils import config
+from .message import MessagePublic
 
 class ConversationCreate(SQLModel):
     member_ids: List[UUID]
@@ -104,3 +105,38 @@ class BaseConversationPublic(SQLModel):
 
 class ConversationsResponse(SQLModel):
     conversations: List[BaseConversationPublic]
+
+class ConversationSocketIO(SQLModel):
+    @classmethod
+    def from_conversation_socket_io(cls, last_message: Message, conversation: Conversation):
+        return cls(
+            id=conversation.id,
+            last_message=last_message,
+            last_message_at=conversation.last_message_at
+        )
+
+    model_config = config
+
+    id: UUID
+    last_message: Message
+    last_message_at: datetime
+
+class ConversationUpdate(SQLModel):
+    @classmethod
+    def from_conversation_update(cls, message: Message, sender: User, conversation: Conversation):
+        return cls(
+            message=MessagePublic.model_validate(message),
+            sender=sender,
+            conversation=ConversationSocketIO.from_conversation_socket_io(message, conversation),
+            unread_counts={
+                p.user_id: p.unread_count
+                for p in conversation.participants
+            }
+        )
+    
+    model_config = config
+
+    message: MessagePublic
+    conversation: ConversationSocketIO
+    unread_counts: Dict[UUID, int]
+    sender: User

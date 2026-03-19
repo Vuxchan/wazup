@@ -1,39 +1,45 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from typing import Any
-from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate
+from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate, ConversationUpdate
 from src import crud
+from src.core.socket import emit_new_message
+from sqlmodel import inspect
 
 router = APIRouter(tags=["message"], prefix="/messages")
 
 @router.post("/direct", status_code=status.HTTP_201_CREATED, response_model=MessagePublic)
-def send_direct_message(session: SessionDep, current_user: CurrentUser, data: DirectMessageCreate) -> Any:
+async def send_direct_message(session: SessionDep, current_user: CurrentUser, data: DirectMessageCreate) -> Any:
     sender_id = current_user.id
     recipient_id = data.recipient_id
     content= data.content
 
+    print("fasdfas")
+
     if sender_id == recipient_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can't message yourself")
-    
+    print("fasdfas", sender_id, [recipient_id])
     if len(crud.check_friendships(session, sender_id, [recipient_id])) != 0:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You are not friend of each other {recipient_id}")
-
+    print("fasdfas")
     if not content or not content.strip():
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No message content")
-    
+    print("fasdfas")
     conversation = crud.get_direct_conversation(session, sender_id, recipient_id)
-
+    print("fasdfas")
     if not conversation:
         conversation = crud.create_direct_conversation(session, sender_id, recipient_id)
-    
-    message = crud.create_message(session, conversation.id, sender_id, content, data.img_url)
-
+    print("fasdfas")
+    message = crud.create_message(session, conversation, sender_id, content, data.img_url)
+    print("fasdfas")
     crud.upd_conv_after_create_msg(session, conversation, message)
-
+    print("fasdfas")
+    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, conversation))
+    print("fasdfas")
     return message
 
 @router.post("/group", status_code=status.HTTP_201_CREATED, response_model=MessagePublic)
-def send_group_message(session: SessionDep, current_user: CurrentUser, data: GroupMessageCreate) -> Any:
+async def send_group_message(session: SessionDep, current_user: CurrentUser, data: GroupMessageCreate) -> Any:
     sender_id = current_user.id
     content = data.content
     conversation_id = data.conversation_id
@@ -51,5 +57,7 @@ def send_group_message(session: SessionDep, current_user: CurrentUser, data: Gro
     message = crud.create_message(session, conversation_id, sender_id, content, data.img_url)
 
     crud.upd_conv_after_create_msg(session, conversation, message)
+
+    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, conversation))
 
     return message

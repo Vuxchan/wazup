@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from src.api.main import api_router
 from src.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
+from src.core.socket import sio_app
 
 app = FastAPI(title=settings.PROJECT_NAME)
+app.mount('/socket.io', app=sio_app)
 
 if settings.all_cors_origins:
     app.add_middleware(

@@ -6,11 +6,12 @@ import { cn } from '@/lib/utils';
 import UserAvatar from './UserAvatar';
 import StatusBadge from './StatusBadge';
 import UnreadCountBadge from './UnreadCountBadge';
+import { useSocketStore } from '@/stores/useSocketStore';
 
 const DirectMessageCard = ({convo}: {convo: Conversation}) => {
     const {user} = useAuthStore();
     const {activeConversationId, setActiveConversation, messages, fetchMessages} = useChatStore();
-
+    const {onlineUsers} = useSocketStore();
     if (!user) return null;
 
     const otherUser = convo.participants.find((p) => p.id !== user.id);
@@ -26,8 +27,6 @@ const DirectMessageCard = ({convo}: {convo: Conversation}) => {
         }
     }
 
-    console.log(convo.lastMessage?.createdAt)
-
     return <ChatCard 
         convoId={convo.id}
         name={otherUser.displayName ?? ""}
@@ -38,7 +37,7 @@ const DirectMessageCard = ({convo}: {convo: Conversation}) => {
         leftSection={
             <>
                 <UserAvatar type='sidebar' name={otherUser.displayName ?? ""} avatarUrl={otherUser.avatarUrl ?? undefined}/>
-                <StatusBadge status='offline' />
+                <StatusBadge status={onlineUsers.includes(otherUser?.id ?? "") ? "online" : "offline"} />
                 {
                     unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />
                 }

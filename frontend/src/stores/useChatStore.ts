@@ -27,11 +27,10 @@ export const useChatStore = create<ChatState>()(
                 try {
                     set({convoLoading: true});
                     const {conversations} = await chatService.fetchConversations();
-                    console.log(conversations)
 
                     set({conversations, convoLoading: false});
                 } catch (error) {
-                    console.log("Error while fetching conversations", error);
+                    console.error("Error while fetching conversations", error);
                     set({convoLoading: false});
                 }
             },
@@ -96,6 +95,47 @@ export const useChatStore = create<ChatState>()(
                 } catch (error) {
                     console.error("Error while sending group message", error)
                 }
+            },
+            addMessage: async (message) => {
+                try {
+                    const {user} = useAuthStore.getState();
+                    const {fetchMessages} = get();
+
+                    message.isOwn = message.senderId === user?.id;
+
+                    const convoId = message.conversationId;
+
+                    let prevItems = get().messages[convoId]?.items ?? [];
+
+                    if (prevItems.length === 0) {
+                        await fetchMessages(message.conversationId);
+                        prevItems = get().messages[convoId]?.items ?? [];
+                    }
+
+                    set((state) => {
+                        if (prevItems.some((m) => m.id === message.id)) {
+                            return state;
+                        }
+
+                        return {
+                            messages: {
+                                ...state.messages,
+                                [convoId]: {
+                                    items: [...prevItems, message],
+                                    hasMore: state.messages[convoId].hasMore,
+                                    nextCursor: state.messages[convoId].nextCursor ?? undefined
+                                }
+                            }
+                        }
+                    })
+                } catch (error) {
+                    console.error("Error while adding message", error);
+                }
+            },
+            updateConversation: (conversation) => {
+                set((state) => ({
+                    conversations: state.conversations.map((c) => c.id === conversation.id ? {...c, ...conversation} : c),
+                }))
             }
         }),
         {

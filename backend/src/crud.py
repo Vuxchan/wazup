@@ -1,4 +1,4 @@
-from sqlmodel import Session, select, and_, or_, func
+from sqlmodel import Session, select, and_, or_, func, tuple_
 from sqlalchemy.orm import selectinload
 from src.models.user import User
 from src.models.friendship import Friendship
@@ -175,12 +175,13 @@ def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: 
     session.refresh(conversation)
     return conversation
 
-def create_message(session: Session, conversation_id: UUID, sender_id: UUID, content: str, img_url: str) -> Message:
+def create_message(session: Session, conversation: Conversation, sender_id: UUID, content: str, img_url: str) -> Message:
     message = Message(
-        conversation_id=conversation_id,
+        conversation_id=conversation.id,
         sender_id=sender_id,
         content=content,
-        img_url=img_url
+        img_url=img_url,
+        conversation=conversation
     )
     session.add(message)
     session.flush()
@@ -256,15 +257,28 @@ def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor
 
 def check_friendships(session: Session, user_id: UUID, friend_ids: List[UUID]) -> List[UUID]:
     friend_ids = set(friend_ids)
-
+    
     statement = (
-        select(Friendship.friend_id)
+        select(Friendship.user_id, Friendship.friend_id)
         .where(
-            Friendship.user_id == user_id,
-            Friendship.friend_id.in_(friend_ids)
+            or_(
+                and_(Friendship.user_id == user_id, Friendship.friend_id.in_(friend_ids)),
+                and_(Friendship.friend_id == user_id, Friendship.user_id.in_(friend_ids))
+            )
         )
     )
 
-    friends = set(session.exec(statement).all())
+    friendships = set(session.exec(statement).all())
+
+    friends = {
+        user if friend == user_id else friend for friend, user in friendships
+    }
+
     invalid_friends = friend_ids - friends
     return invalid_friends
+
+def get_conversation_ids(session: Session, user_id: UUID) -> List[str]:
+    statement = select(ConversationParticipant.conversation_id).where(ConversationParticipant.user_id == user_id)
+    conversation_ids = session.exec(statement).all()
+    result = [str(cid) for cid in conversation_ids]
+    return result
