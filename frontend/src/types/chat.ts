@@ -28,15 +28,15 @@ export interface LastMessage {
 }
 
 export interface Conversation {
-    id: string;    //
-    type: "direct" | "group";//
-    group: Group; //
-    participants: Participant[]; //
-    lastMessageAt: string;//
+    id: string;   
+    type: "direct" | "group";
+    group: Group; 
+    participants: Participant[];
+    lastMessageAt: string;
     seenBy: SeenUser[];
     lastMessage: LastMessage | null;
     unreadCounts: Record<string, number>;
-    createdAt: string;//
+    createdAt: string;
     updatedAt: string;
 }
 

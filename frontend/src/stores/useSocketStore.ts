@@ -31,7 +31,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         });
 
         socket.on("new_message", ({message, conversation, unreadCounts, sender}) => {
-            console.log(message)
             useChatStore.getState().addMessage(message);
 
             const lastMessage = {
@@ -51,7 +50,21 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                 unreadCounts
             }
 
+            if (useChatStore.getState().activeConversationId === message.conversationId) {
+                useChatStore.getState().markAsSeen(); 
+            }
+
             useChatStore.getState().updateConversation(updatedConversation)
+        });
+
+        socket.on("read_message", ({conversation, lastMessage, seenBy}) => {
+            const updated = {
+                ...conversation,
+                lastMessage,
+                seenBy,
+            }
+
+            useChatStore.getState().updateConversation(updated);
         })
     },
     disconnectSocket: () => {

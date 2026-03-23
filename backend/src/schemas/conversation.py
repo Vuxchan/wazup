@@ -88,7 +88,8 @@ class BaseConversationPublic(SQLModel):
             unread_counts={
                 p.user_id: p.unread_count
                 for p in conversation.participants
-            }
+            },
+            seen_by=[p.user_id for p in conversation.participants if p.unread_count == 0]
         )
     
     model_config = config
@@ -102,13 +103,14 @@ class BaseConversationPublic(SQLModel):
     last_message: Optional[LastMessagePublic] = None
     group: Optional[GroupConversationPublic] = None
     unread_counts: Dict[UUID, int]
+    seen_by: List[UUID]
 
 class ConversationsResponse(SQLModel):
     conversations: List[BaseConversationPublic]
 
 class ConversationSocketIO(SQLModel):
     @classmethod
-    def from_conversation_socket_io(cls, last_message: Message, conversation: Conversation):
+    def from_conversation_socket_io(cls, last_message: Message, conversation: Conversation) -> "ConversationSocketIO":
         return cls(
             id=conversation.id,
             last_message=last_message,
@@ -123,7 +125,7 @@ class ConversationSocketIO(SQLModel):
 
 class ConversationUpdate(SQLModel):
     @classmethod
-    def from_conversation_update(cls, message: Message, sender: User, conversation: Conversation):
+    def from_conversation_update(cls, message: Message, sender: User, conversation: Conversation) -> "ConversationUpdate":
         return cls(
             message=MessagePublic.model_validate(message),
             sender=sender,
@@ -140,3 +142,18 @@ class ConversationUpdate(SQLModel):
     conversation: ConversationSocketIO
     unread_counts: Dict[UUID, int]
     sender: User
+
+class ReadMessageUpdate(SQLModel):
+    @classmethod
+    def from_read_message_update(cls, conversation: Conversation, user_id: User) -> "ReadMessageUpdate":
+        return cls(
+            conversation=ConversationSocketIO.from_conversation_socket_io(conversation.last_message, conversation),
+            last_message=LastMessagePublic.from_last_message(conversation.last_message),
+            seen_by=[user_id]
+        )
+
+    model_config = config
+
+    conversation: ConversationSocketIO
+    last_message: LastMessagePublic
+    seen_by: List[UUID]

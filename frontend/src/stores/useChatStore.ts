@@ -136,7 +136,44 @@ export const useChatStore = create<ChatState>()(
                 set((state) => ({
                     conversations: state.conversations.map((c) => c.id === conversation.id ? {...c, ...conversation} : c),
                 }))
-            }
+            },
+            markAsSeen: async () => {
+                try {
+                    const {user} = useAuthStore.getState();
+                    const {activeConversationId, conversations} = get();
+
+                    if (!activeConversationId || !user) {
+                        return;
+                    }
+
+                    const convo = conversations.find((c) => c.id === activeConversationId);
+
+                    if (!convo) {
+                        return;
+                    }
+
+                    if ((convo.unreadCounts?.[user.id] ?? 0) === 0) {
+                        return;
+                    }
+
+                    await chatService.markAsSeen(activeConversationId);
+
+                    set((state) => ({
+                        conversations: state.conversations.map((c) => (
+                            c.id === activeConversationId && c.lastMessage ? {
+                                ...c,
+                                unreadCounts: {
+                                    ...c.unreadCounts,
+                                    [user.id]: 0,
+                                }
+                            }
+                            : c
+                        ))
+                    }))
+                } catch (error) {
+                    console.error("Error while marking as seen", error);
+                }
+            },
         }),
         {
             name: "chat-storage",

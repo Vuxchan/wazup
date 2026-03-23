@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from src.models import Conversation, ConversationType
-from src.schemas import ConversationCreate, BaseConversationPublic, MessagePagePublic, ConversationsResponse
+from src.schemas import ConversationCreate, BaseConversationPublic, MessagePagePublic, ConversationsResponse, ReadMessageUpdate
 from src import crud
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
+from src.core.socket import emit_read_message
 
 router = APIRouter(tags=["conversation"], prefix="/conversations")
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def create_conversation(session: SessionDep, current_user: CurrentUser, data: ConversationCreate) -> Conversation:
     type = data.type
     name = data.name
@@ -64,3 +65,23 @@ def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id
         messages=page.items[::-1],
         cursor=page.next_page
     )
+
+@router.patch("/{conversation_id}/seen")
+async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversation_id: UUID) -> None:
+    user_id = current_user.id
+
+    conversation = crud.get_conversation_by_id(session, conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    
+    last_message = conversation.last_message
+    if not last_message:
+        return
+    
+    if last_message.sender_id == str(user_id):
+        return
+    
+    participant = next(filter(lambda p: p.user_id == user_id, conversation.participants))
+    crud.upd_unread_count(session, participant)
+
+    await emit_read_message(ReadMessageUpdate.from_read_message_update(conversation, user_id))

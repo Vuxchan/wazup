@@ -2,7 +2,7 @@ import socketio
 from fastapi import HTTPException, status
 from src.api.deps import get_session, get_current_user
 from src import crud
-from src.schemas import ConversationUpdate
+from src.schemas import ConversationUpdate, ReadMessageUpdate
 
 sio = socketio.AsyncServer(
     async_mode='asgi',
@@ -60,3 +60,7 @@ async def disconnect(sid) -> None:
 async def emit_new_message(conversation_update: ConversationUpdate):
     data = conversation_update.model_dump(mode="json", by_alias=True)
     await sio.emit("new_message", data, str(conversation_update.conversation.id))
+
+async def emit_read_message(conversation_update: ReadMessageUpdate):
+    data = conversation_update.model_dump(mode="json", by_alias=True)
+    await sio.emit("read_message", data, str(conversation_update.conversation.id))

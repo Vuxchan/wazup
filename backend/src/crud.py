@@ -150,7 +150,12 @@ def get_session_by_token(session: Session, token: str) -> Sessions:
     return user_session 
 
 def get_conversation_by_id(session: Session, conversation_id: UUID) -> Conversation:
-    statement = select(Conversation).options(selectinload(Conversation.participants)).where(Conversation.id == conversation_id)
+    statement = (
+        select(Conversation)
+        .options(selectinload(Conversation.participants))
+        .options(selectinload(Conversation.last_message))
+        .where(Conversation.id == conversation_id)
+    )
     conversation = session.exec(statement).first()
     return conversation
 
@@ -282,3 +287,9 @@ def get_conversation_ids(session: Session, user_id: UUID) -> List[str]:
     conversation_ids = session.exec(statement).all()
     result = [str(cid) for cid in conversation_ids]
     return result
+
+def upd_unread_count(session: Session, participant: ConversationParticipant) -> None:
+    participant.unread_count = 0
+    session.add(participant)
+    session.commit()
+    session.refresh(participant)

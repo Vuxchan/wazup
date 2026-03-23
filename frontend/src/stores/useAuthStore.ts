@@ -4,7 +4,6 @@ import { authService } from "@/services/authService"
 import type { AuthState } from "@/types/store"
 import { persist } from "zustand/middleware";
 import { useChatStore } from "./useChatStore";
-import { User } from "lucide-react";
 
 export const useAuthStore = create<AuthState>()(
     persist(
