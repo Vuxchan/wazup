@@ -26,3 +26,11 @@ class UserPublic(SQLModel):
     bio: Optional[str]
     phone: Optional[str]
     created_at: datetime
+
+class UserSearch(SQLModel):
+    model_config = config
+
+    id: UUID
+    username: str
+    display_name: Optional[str]
+    avatar_url: Optional[str]

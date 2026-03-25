@@ -35,3 +35,6 @@ class MessagePublic(SQLModel):
 class MessagePagePublic(SQLModel):
     messages: List[MessagePublic]
     cursor: Optional[str]
+
+class Message(SQLModel):
+    message: str

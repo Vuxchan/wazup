@@ -1,16 +1,14 @@
 from fastapi import APIRouter, status, HTTPException
 from src.api.deps import SessionDep, CurrentUser
-from src.models.friend_request import FriendRequest
-from src.schemas.user import UserPublic
-from src.schemas.friend import FriendRequestCreate, FriendRequestPublic
+from src.schemas import UserPublic, FriendRequestCreate, FriendRequestUsersPublic, Message
 from src import crud
 from uuid import UUID
-from typing import Any, List, Tuple
+from typing import Any, List
 
-router = APIRouter(tags=["friend"], prefix="/friend")
+router = APIRouter(tags=["friend"], prefix="/friends")
 
 @router.post("/requests", status_code=status.HTTP_201_CREATED)
-def send_friend_request(session: SessionDep, current_user: CurrentUser, FriendRequestCreate: FriendRequestCreate) -> FriendRequest:
+def send_friend_request(session: SessionDep, current_user: CurrentUser, FriendRequestCreate: FriendRequestCreate) -> Message:
     from_user = current_user.id 
     to_user = FriendRequestCreate.to
     if from_user == to_user:
@@ -25,8 +23,8 @@ def send_friend_request(session: SessionDep, current_user: CurrentUser, FriendRe
     if crud.check_friend_request(session, from_user, to_user):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Friend request already exists")
     
-    friend_request = crud.create_friend_request(session, from_user, FriendRequestCreate)
-    return friend_request
+    crud.create_friend_request(session, from_user, FriendRequestCreate)
+    return Message(message="Request sent successfully")
 
 @router.post("/requests/{request_id}/accept", status_code=status.HTTP_200_OK, response_model=UserPublic)
 def accept_friend_request(session: SessionDep, current_user: CurrentUser, request_id: UUID) -> Any:
@@ -62,7 +60,7 @@ def get_all_friends(session: SessionDep, current_user: CurrentUser) -> Any:
     friends = [f.get_friend(user_id) for f in friendships]
     return friends
 
-@router.get("/requests", response_model=FriendRequestPublic)
+@router.get("/requests", response_model=FriendRequestUsersPublic)
 def get_friend_requests(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     requests = crud.get_all_requests(session, user_id)

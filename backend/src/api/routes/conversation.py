@@ -49,7 +49,7 @@ def get_conversations(session: SessionDep, current_user: CurrentUser) -> Convers
         conversations=base_conversations
     )
 
-@router.get("/{conversation_id}/messages/", status_code=status.HTTP_200_OK)
+@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK)
 def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> MessagePagePublic:
     user_id = current_user.id
 

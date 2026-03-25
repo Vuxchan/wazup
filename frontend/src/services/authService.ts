@@ -31,7 +31,7 @@ export const authService = {
     },
 
     fetchMe: async () => {
-        const res = await api.get("/user/me", { withCredentials: true });
+        const res = await api.get("/users/me", { withCredentials: true });
 
         return res.data;
     },

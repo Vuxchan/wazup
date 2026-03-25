@@ -55,7 +55,7 @@ type SignInFormValues = z.infer<typeof signInSchema>
                     </Label>
                     <Input type="text" id="username" placeholder="moji" {...register("email")}/>
                     {errors.email && (
-                    <p className="text-destructive text-sm">
+                    <p className="error-message">
                         {errors.email.message}
                     </p>
                     )}
@@ -67,7 +67,7 @@ type SignInFormValues = z.infer<typeof signInSchema>
                     </Label>
                     <Input type="password" id="password" {...register("password")}/>
                     {errors.password && (
-                    <p className="text-destructive text-sm">
+                    <p className="error-message">
                         {errors.password.message}
                     </p>
                     )}

@@ -59,7 +59,7 @@ export function SignupForm({
                     </Label>
                     <Input type="text" id="lastname" {...register("lastname")}/>
                     {errors.lastname && (
-                        <p className="text-destructive text-sm">
+                        <p className="error-message">
                         {errors.lastname.message}
                         </p>
                     )}
@@ -71,7 +71,7 @@ export function SignupForm({
                     </Label>
                     <Input type="text" id="firstname" {...register("firstname")}/>
                     {errors.firstname && (
-                        <p className="text-destructive text-sm">
+                        <p className="error-message">
                         {errors.firstname.message}
                         </p>
                     )}
@@ -84,7 +84,7 @@ export function SignupForm({
                     </Label>
                     <Input type="text" id="username" placeholder="moji" {...register("username")}/>
                     {errors.username && (
-                    <p className="text-destructive text-sm">
+                    <p className="error-message">
                         {errors.username.message}
                     </p>
                     )}
@@ -96,7 +96,7 @@ export function SignupForm({
                     </Label>
                     <Input type="email" id="email" placeholder="m@gmail.com" {...register("email")}/>
                     {errors.email && (
-                    <p className="text-destructive text-sm">
+                    <p className="error-message">
                         {errors.email.message}
                     </p>
                     )}
@@ -108,7 +108,7 @@ export function SignupForm({
                     </Label>
                     <Input type="password" id="password" {...register("password")}/>
                     {errors.password && (
-                    <p className="text-destructive text-sm">
+                    <p className="error-message">
                         {errors.password.message}
                     </p>
                     )}
