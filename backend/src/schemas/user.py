@@ -27,7 +27,7 @@ class UserPublic(SQLModel):
     phone: Optional[str]
     created_at: datetime
 
-class UserSearch(SQLModel):
+class UserDisplay(SQLModel):
     model_config = config
 
     id: UUID

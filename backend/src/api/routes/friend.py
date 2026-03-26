@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, HTTPException
 from src.api.deps import SessionDep, CurrentUser
-from src.schemas import UserPublic, FriendRequestCreate, FriendRequestUsersPublic, Message
+from src.schemas import UserPublic, FriendRequestCreate, FriendRequestUsersPublic, Message, ReceivedRequestPublic, SentRequestPublic, UserDisplay
 from src import crud
 from uuid import UUID
 from typing import Any, List
@@ -65,6 +65,6 @@ def get_friend_requests(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     requests = crud.get_all_requests(session, user_id)
     return {
-        "received": [r.sent_by for r in requests.received],
-        "sent": [r.received_by for r in requests.sent]
+        "received": [ReceivedRequestPublic.from_received_request(r) for r in requests.received],
+        "sent": [SentRequestPublic.from_sent_request(r) for r in requests.sent]
     }
