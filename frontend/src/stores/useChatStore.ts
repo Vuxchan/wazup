@@ -3,6 +3,7 @@ import type { ChatState } from "@/types/store";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAuthStore } from "./useAuthStore";
+import { useSocketStore } from "./useSocketStore";
 
 export const useChatStore = create<ChatState>()(
     persist(
@@ -12,6 +13,7 @@ export const useChatStore = create<ChatState>()(
             activeConversationId: null,
             convoLoading: false,
             messageLoading: false,
+            loading: false,
 
             setActiveConversation: (id) => set({activeConversationId: id}),
             reset: () => {
@@ -117,6 +119,11 @@ export const useChatStore = create<ChatState>()(
                             return state;
                         }
 
+                        const updatedConversations = [
+                            ...state.conversations.filter(convo => convo.id === convoId),
+                            ...state.conversations.filter(convo => convo.id !== convoId)
+                        ];
+
                         return {
                             messages: {
                                 ...state.messages,
@@ -125,7 +132,8 @@ export const useChatStore = create<ChatState>()(
                                     hasMore: state.messages[convoId].hasMore,
                                     nextCursor: state.messages[convoId].nextCursor ?? undefined
                                 }
-                            }
+                            },
+                            conversations: updatedConversations
                         }
                     })
                 } catch (error) {
@@ -172,6 +180,30 @@ export const useChatStore = create<ChatState>()(
                     }))
                 } catch (error) {
                     console.error("Error while marking as seen", error);
+                }
+            },
+            addConvo: (convo) => {
+                set((state) => {
+                    const exist = state.conversations.some((c) => c.id.toString() === convo.id.toString());
+
+                    return {
+                        conversations: exist ? state.conversations : [convo, ...state.conversations],
+                        activeConversationId: convo.id,
+                    }
+                })
+            },
+            createConversation: async (type, name, memberIds) => {
+                try {
+                    set({loading: true});
+                    const conversation = await chatService.createConversation(type, name, memberIds);
+
+                    get().addConvo(conversation);
+
+                    useSocketStore.getState().socket?.emit("join_conversation", conversation.id)
+                } catch (error) {
+                    console.error("Error while creating conversation", error);
+                } finally {
+                    set({loading: false});
                 }
             },
         }),

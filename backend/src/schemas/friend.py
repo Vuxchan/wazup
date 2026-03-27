@@ -51,6 +51,6 @@ class SentRequestPublic(FriendRequestBase):
 
     to_user: UserDisplay
 
-class FriendRequestUsersPublic(SQLModel):
+class FriendRequestsPublic(SQLModel):
     received: List[ReceivedRequestPublic]
     sent: List[SentRequestPublic] 

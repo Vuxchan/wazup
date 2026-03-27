@@ -35,5 +35,11 @@ export const chatService = {
 
     async markAsSeen(conversationId: string) {
         return api.patch(`/conversations/${conversationId}/seen`);
+    },
+
+    async createConversation(type: "direct" | "group", name: string, memberIds: string[]) {
+        const res = await api.post("/conversations", {type, name, memberIds});
+        
+        return res.data;
     }
 }

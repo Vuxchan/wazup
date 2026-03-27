@@ -7,6 +7,8 @@ from src.utils import config
 from .message import MessagePublic
 
 class ConversationCreate(SQLModel):
+    model_config = config
+
     member_ids: List[UUID]
     type: ConversationType
     name: Optional[str]
@@ -67,9 +69,9 @@ class GroupConversationPublic(SQLModel):
     name: str
     # avatar_group_url: Optional[str] = None
 
-class BaseConversationPublic(SQLModel):
+class ConversationPublic(SQLModel):
     @classmethod
-    def from_base_conversation(cls, conversation: Conversation) -> "BaseConversationPublic":
+    def from_conversation(cls, conversation: Conversation) -> "ConversationPublic":
         return cls(
             id=conversation.id,
             type=conversation.type,
@@ -105,8 +107,8 @@ class BaseConversationPublic(SQLModel):
     unread_counts: Dict[UUID, int]
     seen_by: List[UUID]
 
-class ConversationsResponse(SQLModel):
-    conversations: List[BaseConversationPublic]
+class ConversationListPublic(SQLModel):
+    conversations: List[ConversationPublic]
 
 class ConversationSocketIO(SQLModel):
     @classmethod

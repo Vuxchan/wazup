@@ -1,8 +1,8 @@
 import socketio
-from fastapi import HTTPException, status
 from src.api.deps import get_session, get_current_user
 from src import crud
-from src.schemas import ConversationUpdate, ReadMessageUpdate
+from src.schemas import ConversationUpdate, ReadMessageUpdate, ConversationPublic
+from uuid import UUID
 
 sio = socketio.AsyncServer(
     async_mode='asgi',
@@ -40,6 +40,8 @@ async def connect(sid, environ, auth) -> None:
     for cid in conversation_ids:
         await sio.enter_room(sid, cid)
 
+    await sio.enter_room(sid, str(user_id))
+
 @sio.event
 async def disconnect(sid) -> None:
     user_id = sid_to_user[sid]
@@ -64,3 +66,11 @@ async def emit_new_message(conversation_update: ConversationUpdate):
 async def emit_read_message(conversation_update: ReadMessageUpdate):
     data = conversation_update.model_dump(mode="json", by_alias=True)
     await sio.emit("read_message", data, str(conversation_update.conversation.id))
+
+async def emit_new_group(conversation: ConversationPublic, user_id: UUID):
+    data = conversation.model_dump(mode="json", by_alias=True)
+    await sio.emit("new_group", data, str(user_id))
+
+@sio.on("join_conversation")
+async def join_conversation(sid, conversation_id):
+    await sio.enter_room(sid, conversation_id)

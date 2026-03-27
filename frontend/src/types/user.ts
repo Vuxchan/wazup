@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Friend {
-    _id: string;
+    id: string;
     username: string;
     displayName: string;
     avatarUrl?: string;

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, HTTPException
 from src.api.deps import SessionDep, CurrentUser
-from src.schemas import UserPublic, FriendRequestCreate, FriendRequestUsersPublic, Message, ReceivedRequestPublic, SentRequestPublic, UserDisplay
+from src.schemas import FriendRequestCreate, FriendRequestsPublic, Message, ReceivedRequestPublic, SentRequestPublic, UserDisplay
 from src import crud
 from uuid import UUID
 from typing import Any, List
@@ -26,7 +26,7 @@ def send_friend_request(session: SessionDep, current_user: CurrentUser, FriendRe
     crud.create_friend_request(session, from_user, FriendRequestCreate)
     return Message(message="Request sent successfully")
 
-@router.post("/requests/{request_id}/accept", status_code=status.HTTP_200_OK, response_model=UserPublic)
+@router.post("/requests/{request_id}/accept", status_code=status.HTTP_200_OK, response_model=UserDisplay)
 def accept_friend_request(session: SessionDep, current_user: CurrentUser, request_id: UUID) -> Any:
     user_id = current_user.id
     friend_request = crud.get_request_by_id(session, request_id)
@@ -53,14 +53,14 @@ def decline_friend_request(session: SessionDep, current_user: CurrentUser, reque
     
     crud.delete_friend_req(session, friend_request)
 
-@router.get("", response_model=List[UserPublic])
+@router.get("", response_model=List[UserDisplay])
 def get_all_friends(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     friendships = crud.get_all_friendships(session, user_id)
     friends = [f.get_friend(user_id) for f in friendships]
     return friends
 
-@router.get("/requests", response_model=FriendRequestUsersPublic)
+@router.get("/requests", response_model=FriendRequestsPublic)
 def get_friend_requests(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     requests = crud.get_all_requests(session, user_id)

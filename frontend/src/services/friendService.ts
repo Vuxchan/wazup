@@ -25,7 +25,7 @@ export const friendService = {
 
     async acceptRequest(requestId: string) {
         try {
-            const res = await api.post(`friends/requests/${requestId}/accept`);
+            const res = await api.post(`/friends/requests/${requestId}/accept`);
             return res.data.requestAcceptedBy;
         } catch (error) {
             console.error("Error while accepting friend request", error);
@@ -34,9 +34,14 @@ export const friendService = {
 
     async declineRequest(requestId: string) {
         try {
-            await api.post(`friends/requests/${requestId}/decline`);
+            await api.post(`/friends/requests/${requestId}/decline`);
         } catch (error) {
             console.error("Error while declining friend request", error);
         }
+    },
+
+    async getFriendList() {
+        const res = await api.get("/friends");
+        return res.data;
     }
 }

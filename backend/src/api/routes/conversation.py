@@ -1,16 +1,16 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from src.models import Conversation, ConversationType
-from src.schemas import ConversationCreate, BaseConversationPublic, MessagePagePublic, ConversationsResponse, ReadMessageUpdate
+from src.schemas import ConversationCreate, ConversationPublic, MessagePagination, ConversationListPublic, ReadMessageUpdate
 from src import crud
-from typing import Optional
+from typing import Optional, Any
 from uuid import UUID
-from src.core.socket import emit_read_message
+from src.core.socket import emit_read_message, emit_new_group
 
 router = APIRouter(tags=["conversation"], prefix="/conversations")
 
-@router.post("", status_code=status.HTTP_201_CREATED)
-def create_conversation(session: SessionDep, current_user: CurrentUser, data: ConversationCreate) -> Conversation:
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=ConversationPublic)
+async def create_conversation(session: SessionDep, current_user: CurrentUser, data: ConversationCreate) -> Any:
     type = data.type
     name = data.name
     member_ids = data.member_ids
@@ -21,6 +21,7 @@ def create_conversation(session: SessionDep, current_user: CurrentUser, data: Co
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Can only add friends to your group {not_friend_ids}")
 
     conversation = None
+    conversation_public = None
     match type:
         case ConversationType.DIRECT:
             if len(member_ids) != 1:
@@ -31,26 +32,30 @@ def create_conversation(session: SessionDep, current_user: CurrentUser, data: Co
             conversation = crud.get_direct_conversation(session, user_id, participant_id)
 
             if not conversation:
-                conversation = crud.create_direct_conversation(session, user_id, participant_id)
+                conversation = crud.create_conversation_with_participants(session, [user_id, participant_id], "direct")
+
+            conversation_public = ConversationPublic.from_conversation(conversation)
 
         case ConversationType.GROUP:
             if not name or len(member_ids) < 2:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Group name and member list are required")
-            conversation = crud.create_group_conversation(session, [user_id] + member_ids, name)
+            
+            conversation = crud.create_conversation_with_participants(session, [user_id] + member_ids, "group", name)
 
-    return conversation
+            conversation_public = ConversationPublic.from_conversation(conversation)
+            for uid in member_ids:
+                await emit_new_group(conversation_public, uid)
 
-@router.get("", status_code=status.HTTP_200_OK)
-def get_conversations(session: SessionDep, current_user: CurrentUser) -> ConversationsResponse:
+    return conversation_public
+
+@router.get("", status_code=status.HTTP_200_OK, response_model=ConversationListPublic)
+def get_conversations(session: SessionDep, current_user: CurrentUser) -> Any:
     user_id = current_user.id
     conversations = crud.get_all_conversations(session, user_id)
-    base_conversations = [BaseConversationPublic.from_base_conversation(c) for c in conversations]
-    return ConversationsResponse(
-        conversations=base_conversations
-    )
+    return ConversationListPublic(conversations=conversations)
 
-@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK)
-def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> MessagePagePublic:
+@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=MessagePagination)
+def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> Any:
     user_id = current_user.id
 
     conversation = crud.get_conversation_by_id(session, conversation_id)
@@ -61,7 +66,7 @@ def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a conversation member")
 
     page = crud.paginate_messages(session, conversation_id, size, cursor)
-    return MessagePagePublic(
+    return MessagePagination(
         messages=page.items[::-1],
         cursor=page.next_page
     )

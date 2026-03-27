@@ -4,7 +4,7 @@ from typing import Any
 from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate, ConversationUpdate
 from src import crud
 from src.core.socket import emit_new_message
-from sqlmodel import inspect
+from src.utils import check_loaded_relationships
 
 router = APIRouter(tags=["message"], prefix="/messages")
 
@@ -52,7 +52,7 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
     if not content or not content.strip():
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No message content")
     
-    message = crud.create_message(session, conversation_id, sender_id, content, data.img_url)
+    message = crud.create_message(session, conversation, sender_id, content, data.img_url)
 
     crud.upd_conv_after_create_msg(session, conversation, message)
 

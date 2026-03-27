@@ -5,6 +5,7 @@ import { id } from "zod/v4/locales";
 import { create } from "zustand";
 
 export const useFriendStore = create <FriendState>((set, get) => ({
+    friends: [],
     loading: false,
     receivedList: [],
     sentList: [],
@@ -76,6 +77,18 @@ export const useFriendStore = create <FriendState>((set, get) => ({
             }));
         } catch (error) {
            console.error("Error while declining request", error);   
+        } finally {
+            set({loading: false});
+        }
+    },
+    getFriends: async () => {
+        try {
+            set({loading: true});
+            const friends = await friendService.getFriendList();
+            set({friends: friends});
+        } catch (error) {
+            console.error("Error while getting all friends", error);
+            set({friends: []});
         } finally {
             set({loading: false});
         }

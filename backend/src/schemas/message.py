@@ -4,35 +4,29 @@ from datetime import datetime
 from typing import List, Optional
 from src.utils import config
 
-class MessageCreate(SQLModel):
+class BaseMessage(SQLModel):
     content: str
-    conversation_id: UUID
+    img_url: Optional[str] = None
 
-class DirectMessageCreate(SQLModel):
+class DirectMessageCreate(BaseMessage):
     model_config = config
 
     recipient_id: UUID
-    content: str
-    img_url: Optional[str] = None
 
-class GroupMessageCreate(SQLModel):
+class GroupMessageCreate(BaseMessage):
     model_config = config
 
     conversation_id: UUID
-    content: str
-    img_url: Optional[str] = None
 
-class MessagePublic(SQLModel):
+class MessagePublic(BaseMessage):
     model_config = config
 
     id: UUID
     sender_id: UUID
     conversation_id: UUID
-    content: str
     created_at: datetime
-    img_url: Optional[str]
 
-class MessagePagePublic(SQLModel):
+class MessagePagination(SQLModel):
     messages: List[MessagePublic]
     cursor: Optional[str]
 

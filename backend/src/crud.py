@@ -7,7 +7,7 @@ from src.models.conversation import Conversation, ConversationType
 from src.models.conversation_participant import ConversationParticipant
 from src.models.message import Message
 from src.models import ConversationGroup, Role
-from src.schemas import MessagePublic
+from src.schemas import MessagePublic, ConversationPublic, ConversationCreate
 from src.schemas.user import UserCreate
 from src.schemas.friend import FriendRequestCreate, FriendRequestFilter
 from src.core.security import Hasher
@@ -159,26 +159,43 @@ def get_conversation_by_id(session: Session, conversation_id: UUID) -> Conversat
     conversation = session.exec(statement).first()
     return conversation
 
-def create_participant(conversation_id: UUID, user_id: UUID) -> ConversationParticipant:
+def create_participant(conversation_id: UUID, user_id: UUID, user: User) -> ConversationParticipant:
     participant = ConversationParticipant(
         conversation_id=conversation_id,
-        user_id=user_id
+        user_id=user_id,
+        user=user
     )
     return participant
 
-def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Conversation:
-    # conversation = Conversation(last_message_at=datetime.now(timezone.utc))
-    conversation = Conversation()
+def create_conversation_with_participants(session: Session, member_ids: List[UUID], type: ConversationType, name: Optional[str] = None) -> Conversation:
+    conversation = Conversation(type=type)
     session.add(conversation)
     session.flush()
 
-    sender = create_participant(conversation.id, sender_id)
-    recipient = create_participant(conversation.id, recipient_id)
+    statement = select(User).where(User.id.in_(member_ids))
+    users = session.exec(statement).all()
+    participants = [create_participant(conversation.id, u.id, u) for u in users]
 
-    session.add_all([sender, recipient])
+    if type == ConversationType.GROUP:
+        group = ConversationGroup(
+            conversation_id=conversation.id,
+            created_by=member_ids[0],
+            name=name
+        )
+        session.add(group)
+        participants[0].role = Role.HOST
+        conversation.group = group
+
+    session.add_all(participants)
+
+    conversation.participants = participants
+
     session.commit()
     session.refresh(conversation)
     return conversation
+
+def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Conversation: 
+    return create_conversation_with_participants(session, [sender_id, recipient_id], "direct")
 
 def create_message(session: Session, conversation: Conversation, sender_id: UUID, content: str, img_url: str) -> Message:
     message = Message(
@@ -208,7 +225,8 @@ def upd_conv_after_create_msg(session: Session, conversation: Conversation, mess
 def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Optional[Conversation]:
     statement = (
         select(Conversation)
-        .options(selectinload(Conversation.participants))
+        .options(selectinload(Conversation.participants).selectinload(ConversationParticipant.user))
+        .options(selectinload(Conversation.last_message).selectinload(Message.sender))
         .join(ConversationParticipant)
         .where(Conversation.type == ConversationType.DIRECT, ConversationParticipant.user_id.in_([sender_id, recipient_id]))
         .group_by(Conversation.id)
@@ -217,29 +235,7 @@ def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUI
     conversation = session.exec(statement).first()
     return conversation
 
-def create_group_conversation(session: Session, member_ids: List[UUID], name: str) -> Conversation:
-    # conversation = Conversation(last_message_at=datetime.now(timezone.utc))
-    conversation = Conversation(type=ConversationType.GROUP)
-    session.add(conversation)
-    session.flush()
-
-    participant = [create_participant(conversation.id, m) for m in member_ids]
-    participant[0].role = Role.HOST
-    session.add_all(participant)
-
-    group = ConversationGroup(
-        conversation_id=conversation.id,
-        created_by=member_ids[0],
-        name=name
-    )
-    session.add(group)
-
-    session.commit()
-    session.refresh(conversation)
-
-    return conversation
-
-def get_all_conversations(session: Session, user_id: UUID) -> List[Conversation]:
+def get_all_conversations(session: Session, user_id: UUID) -> List[ConversationPublic]:
     statement = (
         select(Conversation)
         .options(selectinload(Conversation.participants).selectinload(ConversationParticipant.user))
@@ -250,7 +246,7 @@ def get_all_conversations(session: Session, user_id: UUID) -> List[Conversation]
         .order_by(Conversation.last_message_at.desc())
     )
     conversations = session.exec(statement).all()   
-    return conversations
+    return [ConversationPublic.from_conversation(c) for c in conversations]
 
 def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> CursorPage[MessagePublic]:
     set_page(CursorPage[Message])
