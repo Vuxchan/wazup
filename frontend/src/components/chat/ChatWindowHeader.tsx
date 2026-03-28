@@ -48,7 +48,7 @@ const ChatWindowHeader = ({chat}: {chat? : Conversation}) => {
                                 <>
                                     <UserAvatar 
                                         type="sidebar"
-                                        name={otherUser?.displayName || "Moji"}
+                                        name={otherUser?.displayName || "Wazup"}
                                         avatarUrl={otherUser?.avatarUrl || undefined}
                                     />
                                     <StatusBadge status={onlineUsers.includes(otherUser?.id ?? "") ? "online" : "offline"}/>

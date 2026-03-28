@@ -19,11 +19,11 @@
     --popover-foreground: 240 15% 15%;
 
     /* Primary */
-    /* Tím */
-    --primary: 271 79% 47%;
+    /* Cam cá hồi */
+    --primary: 14 100% 60%;
     --primary-foreground: 210 40% 96.1%; /*slate-100*/
     /* Hồng */
-    --primary-glow: 320 100% 70%;
+    --primary-glow: 320 100% 80%;
 
     /* Secondary - lavender */
     --secondary: 270 50% 92%;
@@ -31,10 +31,10 @@
 
     /* Muted */
     --muted: 260 30% 95%;
-    --muted-foreground: 240 15% 50%;
+    --muted-foreground:  15% 50%;
 
-    /* Accent - cyan */
-    --accent: 180 100% 75%;
+    /* Accent - cam cá hồi */
+    --accent: 14 100% 75%;
     --accent-foreground: 240 100% 15%;
 
     /* Chat colors */
@@ -62,7 +62,7 @@
     /* Border and input */
     --border: 282 16% 87%;
     --input: 260 30% 92%;
-    --ring: 271 79% 47%;
+    --ring: 14 79% 47%;
 
     /* Design system values */
     --radius: 1rem;
@@ -75,8 +75,8 @@
     );
     --gradient-chat: linear-gradient(
       135deg,
-      hsl(280, 100%, 65%),
-      hsl(320, 100%, 70%)
+      hsl(14, 90%, 60%),
+      hsl(320, 100%, 80%)
     );
     --gradient-accent: linear-gradient(
       90deg,
@@ -135,7 +135,7 @@
     --popover: 240 15% 12%;
     --popover-foreground: 250 100% 95%;
 
-    --primary: 280 100% 70%;
+    --primary: 14 100% 70%;
     --primary-foreground: 240 15% 8%;
     --primary-glow: 320 100% 80%;
 
@@ -145,7 +145,7 @@
     --muted: 240 15% 15%;
     --muted-foreground: 240 15% 70%;
 
-    --accent: 180 100% 60%;
+    --accent: 14 100% 70%;
     --accent-foreground: 240 15% 8%;
 
     /* Chat bubbles in dark mode */
@@ -164,17 +164,17 @@
 
     --border: 281 15% 25%;
     --input: 240 15% 18%;
-    --ring: 280 100% 70%;
+    --ring: 14 100% 70%;
 
     /* Dark mode gradients */
     --gradient-primary: linear-gradient(
       135deg,
-      hsl(280, 100%, 70%),
+      hsl(14, 100%, 70%),
       hsl(320, 100%, 80%)
     );
     --gradient-chat: linear-gradient(
       135deg,
-      hsl(280, 100%, 70%),
+      hsl(14, 100%, 70%),   
       hsl(320, 100%, 75%)
     );
     --gradient-accent: linear-gradient(

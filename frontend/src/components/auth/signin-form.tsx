@@ -42,18 +42,18 @@ type SignInFormValues = z.infer<typeof signInSchema>
                 <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center gap-2">
                     <a href="/" className="mx-auto block w-fit text-center">
-                    <img src="/logo.svg" alt="logo"/>
+                    <img className="size-30" src="/logo.png" alt="logo"/>
                     </a>
 
                     <h1 className="text-2xl font-bold">Welcome back</h1>
-                    <p className="text-mutex-foreground text-balance">Log in to your Moji account</p>
+                    <p className="text-mutex-foreground text-balance">Log in to your Wazup account</p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                     <Label htmlFor="username" className="block text-sm">
                     Email
                     </Label>
-                    <Input type="text" id="username" placeholder="moji" {...register("email")}/>
+                    <Input type="text" id="username" placeholder="Wazup" {...register("email")}/>
                     {errors.email && (
                     <p className="error-message">
                         {errors.email.message}

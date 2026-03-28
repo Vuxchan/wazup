@@ -25,6 +25,7 @@ import { ChevronsUpDownIcon, UserIcon, Bell } from "lucide-react"
 import Logout from "../auth/Logout"
 import { useState } from "react"
 import FriendRequestDialog from "../friendRequest/FriendRequestDialog"
+import ProfileDialog from "../profile/ProfileDialog"
 
 export function NavUser({
     user,
@@ -33,6 +34,7 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar();
     const [friendRequestOpen, setFriendRequestOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
 
     return (
         <>
@@ -76,7 +78,7 @@ export function NavUser({
 
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setProfileOpen(true)}>
                         <UserIcon className="text-muted-foreground dark:group-focus:!text-accent-foreground"
                         />
                         Account
@@ -99,6 +101,8 @@ export function NavUser({
             </SidebarMenu>
 
             <FriendRequestDialog open={friendRequestOpen} setOpen={setFriendRequestOpen}/>
+        
+            <ProfileDialog open={profileOpen} setOpen={setProfileOpen}/>
         </>
     )
 }

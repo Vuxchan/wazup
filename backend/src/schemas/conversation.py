@@ -91,7 +91,7 @@ class ConversationPublic(SQLModel):
                 p.user_id: p.unread_count
                 for p in conversation.participants
             },
-            seen_by=[p.user_id for p in conversation.participants if p.unread_count == 0]
+            seen_by= [p.user_id for p in conversation.participants if p.unread_count == 0 and p.user_id != conversation.last_message.sender_id] if conversation.last_message else []
         )
     
     model_config = config

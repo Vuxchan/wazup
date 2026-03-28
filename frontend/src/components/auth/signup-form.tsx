@@ -45,10 +45,10 @@ export function SignupForm({
                 <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center gap-2">
                     <a href="/" className="mx-auto block w-fit text-center">
-                    <img src="/logo.svg" alt="logo"/>
+                    <img className="size-30" src="/logo.png" alt="logo"/>
                     </a>
 
-                    <h1 className="text-2xl font-bold">Create Moji account</h1>
+                    <h1 className="text-2xl font-bold">Create Wazup account</h1>
                     <p className="text-mutex-foreground text-balance">Welcome! Let's sign in to start</p>
                 </div>
 
@@ -82,7 +82,7 @@ export function SignupForm({
                     <Label htmlFor="username" className="block text-sm">
                     Username
                     </Label>
-                    <Input type="text" id="username" placeholder="moji" {...register("username")}/>
+                    <Input type="text" id="username" placeholder="Wazup" {...register("username")}/>
                     {errors.username && (
                     <p className="error-message">
                         {errors.username.message}

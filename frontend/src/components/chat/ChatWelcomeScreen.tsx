@@ -13,7 +13,7 @@ const ChatWelcomeScreen = () => {
                             <img src="chat.png" className="size-10"></img>
                         </span>
                     </div>
-                    <h2 className="text-2xl font-bold mb-2 bg-gradient-chat bg-clip-text text-transparent">Welcome to Moji!</h2>
+                    <h2 className="text-2xl font-bold mb-2 bg-gradient-chat bg-clip-text text-transparent">Welcome to Wazup!</h2>
                     <p className="text-muted-foreground">Choose a conversation and start texting!</p>
                 </div>
             </div>

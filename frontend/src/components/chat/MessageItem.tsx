@@ -32,7 +32,7 @@ const MessageItem = ({message, index, messages, selectedConvo, lastMessageStatus
                         {isGroupBreak && (
                             <UserAvatar 
                                 type="chat"
-                                name={participant?.displayName ?? "Moji"}
+                                name={participant?.displayName ?? "Wazup"}
                                 avatarUrl={participant?.avatarUrl ?? undefined}
                             />
                         )}

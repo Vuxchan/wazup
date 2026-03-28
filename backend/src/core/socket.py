@@ -65,6 +65,7 @@ async def emit_new_message(conversation_update: ConversationUpdate):
 
 async def emit_read_message(conversation_update: ReadMessageUpdate):
     data = conversation_update.model_dump(mode="json", by_alias=True)
+    print("read message")
     await sio.emit("read_message", data, str(conversation_update.conversation.id))
 
 async def emit_new_group(conversation: ConversationPublic, user_id: UUID):

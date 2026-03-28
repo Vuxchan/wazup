@@ -9,6 +9,7 @@ bidict==0.23.1
 certifi==2026.2.25
 cffi==2.0.0
 click==8.3.1
+cloudinary==1.44.1
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.135.1
@@ -29,6 +30,7 @@ MarkupSafe==3.0.3
 mdurl==0.1.2
 packaging==26.0
 passlib==1.7.4
+pillow==12.1.1
 psycopg==3.3.3
 psycopg-binary==3.3.3
 psycopg-pool==3.3.0

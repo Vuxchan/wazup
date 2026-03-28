@@ -16,6 +16,10 @@ export const useAuthStore = create<AuthState>()(
                 set({accessToken});
             },
 
+            setUser(user) {
+                set({user});
+            },
+
             clearState: () => {
                 set({ accessToken: null, user: null, loading: false });
                 useChatStore.getState().reset();
@@ -50,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
                     await get().fetchMe();
                     useChatStore.getState().fetchConversations();
 
-                    toast.success("Welcome back to Moji!");
+                    toast.success("Welcome back to Wazup!");
                 } catch (error) {
                     console.error(error);
                     toast.error("Login failed");

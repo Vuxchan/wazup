@@ -289,3 +289,9 @@ def upd_unread_count(session: Session, participant: ConversationParticipant) -> 
     session.add(participant)
     session.commit()
     session.refresh(participant)
+
+def update_avatar(session: Session, avatar_url: str, avatar_id: str, user: User) -> None:
+    user.avatar_url = avatar_url
+    user.avatar_id = avatar_id
+    session.add(user)
+    session.commit()
