@@ -3,7 +3,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Smile } from "lucide-react";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
-import { emoji } from "zod";
 
 interface EmojiPickerProps {
     onChange: (value: string) => void;

@@ -9,7 +9,7 @@ import { useEffect } from "react";
 
 
 const ChatWindowLayout = () => {
-	const {activeConversationId, conversations, messageLoading: loading, messages, markAsSeen} = useChatStore();
+	const {activeConversationId, conversations, messageLoading: loading, markAsSeen} = useChatStore();
 
 	const selectedConvo = conversations.find((c) => c.id === activeConversationId) ?? null;
 

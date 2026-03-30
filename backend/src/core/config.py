@@ -14,6 +14,7 @@ class Settings(BaseSettings):
         env_file="../.env",
         case_sensitive=False
     )
+    PORT: int = 8000
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10

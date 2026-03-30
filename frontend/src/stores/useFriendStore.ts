@@ -1,10 +1,8 @@
 import { friendService } from "@/services/friendService";
 import type { FriendState } from "@/types/store";
-import { use } from "react";
-import { id } from "zod/v4/locales";
 import { create } from "zustand";
 
-export const useFriendStore = create <FriendState>((set, get) => ({
+export const useFriendStore = create <FriendState>((set) => ({
     friends: [],
     loading: false,
     receivedList: [],
