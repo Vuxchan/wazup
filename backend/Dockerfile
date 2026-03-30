@@ -25,4 +25,4 @@ USER appuser
 
 EXPOSE 8000
 
-ENTRYPOINT ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+ENTRYPOINT ["sh", "-c", "fastapi run src/main.py --host 0.0.0.0 --port ${PORT:-8000}"]
