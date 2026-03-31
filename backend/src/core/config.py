@@ -21,12 +21,12 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_TIME: int = 60 * 24 * 7
     FRONTEND_HOST: str = "http://localhost:5173"
 
-    BACKEND_CORS_ORIGIN: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
     @computed_field 
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGIN] + [self.FRONTEND_HOST]
+        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [self.FRONTEND_HOST]
 
     @computed_field
     @property
