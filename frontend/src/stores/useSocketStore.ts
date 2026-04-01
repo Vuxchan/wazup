@@ -30,8 +30,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             set({onlineUsers: userIds});
         });
 
-        socket.on("new_message", ({message, conversation, unreadCounts, sender}) => {
+        socket.on("new_message", ({message, conversation, sender}) => {
             useChatStore.getState().addMessage(message);
+            const {conversations} = useChatStore.getState();
 
             const lastMessage = {
                 id: conversation.lastMessage.id,
@@ -43,6 +44,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
                     avatarUrl: null
                 }
             };
+
+            const oldConversation = conversations.filter((c) => c.id === conversation.id)[0];
+            const unreadCounts = { ...oldConversation.unreadCounts };
+            oldConversation.participants.forEach(p => {
+                if (p.id === sender.id) {
+                    unreadCounts[p.id] = 0;
+                } else {
+                    const currentCount = unreadCounts[p.id] || 0;
+                    unreadCounts[p.id] = currentCount + 1;
+                }
+            });
 
             const updatedConversation = {
                 ...conversation,
