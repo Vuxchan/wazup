@@ -48,7 +48,7 @@ def signin(session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, 
         max_age=settings.REFRESH_TOKEN_EXPIRE_TIME, 
         secure=True,
         httponly=True,
-        samesite="none"
+        samesite="lax"
     )
 
     return Token(

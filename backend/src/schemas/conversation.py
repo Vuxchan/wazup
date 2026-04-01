@@ -112,11 +112,11 @@ class ConversationListPublic(SQLModel):
 
 class ConversationSocketIO(SQLModel):
     @classmethod
-    def from_conversation_socket_io(cls, last_message: Message, conversation: Conversation) -> "ConversationSocketIO":
+    def from_conversation_socket_io(cls, last_message: Message) -> "ConversationSocketIO":
         return cls(
-            id=conversation.id,
+            id=last_message.conversation_id,
             last_message=last_message,
-            last_message_at=conversation.last_message_at
+            last_message_at=last_message.created_at
         )
 
     model_config = config
@@ -127,29 +127,24 @@ class ConversationSocketIO(SQLModel):
 
 class ConversationUpdate(SQLModel):
     @classmethod
-    def from_conversation_update(cls, message: Message, sender: User, conversation: Conversation) -> "ConversationUpdate":
+    def from_conversation_update(cls, message: Message, sender: User) -> "ConversationUpdate":
         return cls(
             message=MessagePublic.model_validate(message),
             sender=sender,
-            conversation=ConversationSocketIO.from_conversation_socket_io(message, conversation),
-            unread_counts={
-                p.user_id: p.unread_count
-                for p in conversation.participants
-            }
+            conversation=ConversationSocketIO.from_conversation_socket_io(message),
         )
     
     model_config = config
 
     message: MessagePublic
     conversation: ConversationSocketIO
-    unread_counts: Dict[UUID, int]
     sender: User
 
 class ReadMessageUpdate(SQLModel):
     @classmethod
     def from_read_message_update(cls, conversation: Conversation, user_id: User) -> "ReadMessageUpdate":
         return cls(
-            conversation=ConversationSocketIO.from_conversation_socket_io(conversation.last_message, conversation),
+            conversation=ConversationSocketIO.from_conversation_socket_io(conversation.last_message),
             last_message=LastMessagePublic.from_last_message(conversation.last_message),
             seen_by=[user_id]
         )

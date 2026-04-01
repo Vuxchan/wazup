@@ -4,7 +4,6 @@ from typing import Any
 from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate, ConversationUpdate
 from src import crud
 from src.core.socket import emit_new_message
-from src.utils import check_loaded_relationships
 
 router = APIRouter(tags=["message"], prefix="/messages")
 
@@ -23,18 +22,22 @@ async def send_direct_message(session: SessionDep, current_user: CurrentUser, da
     if not content or not content.strip():
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No message content")
 
-    conversation = crud.get_direct_conversation(session, sender_id, recipient_id)
+    conversation = crud.get_direct_conversation_for_message(session, sender_id, recipient_id)
 
     if not conversation:
         conversation = crud.create_direct_conversation(session, sender_id, recipient_id)
 
     message = crud.create_message(session, conversation, sender_id, content, data.img_url)
 
-    crud.upd_conv_after_create_msg(session, conversation, message)
+    crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, conversation))
+    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user))
 
-    return message
+    res = MessagePublic.model_validate(message)
+
+    session.commit()
+
+    return res
 
 @router.post("/group", status_code=status.HTTP_201_CREATED, response_model=MessagePublic)
 async def send_group_message(session: SessionDep, current_user: CurrentUser, data: GroupMessageCreate) -> Any:
@@ -54,8 +57,8 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
     
     message = crud.create_message(session, conversation, sender_id, content, data.img_url)
 
-    crud.upd_conv_after_create_msg(session, conversation, message)
+    unread_counts = crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, conversation))
+    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, unread_counts))
 
     return message

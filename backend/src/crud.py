@@ -1,4 +1,4 @@
-from sqlmodel import Session, select, and_, or_, func, tuple_
+from sqlmodel import Session, select, and_, or_, func, update, case
 from sqlalchemy.orm import selectinload
 from src.models.user import User
 from src.models.friendship import Friendship
@@ -15,7 +15,7 @@ from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
 from uuid import UUID
 from hashlib import sha256
-from typing import Optional, List
+from typing import Optional, List, Dict
 from fastapi_pagination import set_params, set_page
 from fastapi_pagination.cursor import CursorPage, CursorParams
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -197,6 +197,17 @@ def create_conversation_with_participants(session: Session, member_ids: List[UUI
 def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Conversation: 
     return create_conversation_with_participants(session, [sender_id, recipient_id], "direct")
 
+def get_direct_conversation_for_message(session: Session, sender_id: UUID, recipient_id: UUID) -> Optional[Conversation]:
+    statement = (
+        select(Conversation)
+        .join(ConversationParticipant)
+        .where(Conversation.type == ConversationType.DIRECT, ConversationParticipant.user_id.in_([sender_id, recipient_id]))
+        .group_by(Conversation.id)
+        .having(func.count(ConversationParticipant.user_id) == 2)
+    )
+    conversation = session.exec(statement).first()
+    return conversation
+
 def create_message(session: Session, conversation: Conversation, sender_id: UUID, content: str, img_url: str) -> Message:
     message = Message(
         conversation_id=conversation.id,
@@ -207,20 +218,33 @@ def create_message(session: Session, conversation: Conversation, sender_id: UUID
     )
     session.add(message)
     session.flush()
-    session.refresh(message)
     return message
 
-def upd_conv_after_create_msg(session: Session, conversation: Conversation, message: Message) -> None:
-    conversation.last_message_at = message.created_at
-    conversation.last_message_id = message.id
+def upd_conv_after_create_msg(session: Session, conversation_id: UUID, message: Message) -> None:
+    session.exec(
+        update(Conversation)
+        .where(Conversation.id == conversation_id)
+        .values(
+            last_message_id=message.id,
+            last_message_at=message.created_at
+        )
+    )
 
-    for member in conversation.participants:
-        if member.user_id == message.sender_id:
-            member.unread_count = 0
-            member.last_read_message_id = message.id
-        else:
-            member.unread_count += 1
-    session.commit()
+    session.exec(
+        update(ConversationParticipant)
+        .where(ConversationParticipant.conversation_id == conversation_id)
+        .values(
+            unread_count=case(
+                (ConversationParticipant.user_id == message.sender_id, 0),
+                else_=ConversationParticipant.unread_count + 1
+            ),
+            last_read_message_id=case(
+                (ConversationParticipant.user_id == message.sender_id, message.id),
+                else_=ConversationParticipant.last_read_message_id
+            )
+        )
+    )
+    session.flush()
 
 def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Optional[Conversation]:
     statement = (
@@ -245,7 +269,7 @@ def get_all_conversations(session: Session, user_id: UUID) -> List[ConversationP
         .where(ConversationParticipant.user_id == user_id)
         .order_by(Conversation.last_message_at.desc())
     )
-    conversations = session.exec(statement).all()   
+    conversations = session.exec(statement).all()
     return [ConversationPublic.from_conversation(c) for c in conversations]
 
 def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> CursorPage[MessagePublic]:
@@ -258,7 +282,7 @@ def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor
 
 def check_friendships(session: Session, user_id: UUID, friend_ids: List[UUID]) -> List[UUID]:
     friend_ids = set(friend_ids)
-    
+
     statement = (
         select(Friendship.user_id, Friendship.friend_id)
         .where(
