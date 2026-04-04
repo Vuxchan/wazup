@@ -63,7 +63,7 @@ export interface ChatState {
     addMessage: (message: Message) => Promise<void>;
     updateConversation: (conversation: Conversation) => void;
     markAsSeen: () => Promise<void>;
-    addConvo: (convo: Conversation) => void;
+    addConvo: (convo: Conversation, setActiveconvoId: boolean) => void;
     createConversation: (type: "group" | "direct", name: string, memberIds: string[]) => Promise<void>;
 }
 

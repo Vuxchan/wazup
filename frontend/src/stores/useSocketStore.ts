@@ -80,12 +80,12 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         });
 
         socket.on("new_direct", (conversation) => {
-            useChatStore.getState().addConvo(conversation);
+            useChatStore.getState().addConvo(conversation, false);
             socket.emit("join_conversation", conversation.id);
         })
 
         socket.on("new_group", (conversation) => {
-            useChatStore.getState().addConvo(conversation);
+            useChatStore.getState().addConvo(conversation, false);
             socket.emit("join_conversation", conversation.id);
         });
     },

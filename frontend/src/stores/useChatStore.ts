@@ -190,13 +190,14 @@ export const useChatStore = create<ChatState>()(
                     console.error("Error while marking as seen", error);
                 }
             },
-            addConvo: (convo) => {
+            addConvo: (convo, setActiveconvoId) => {
                 set((state) => {
                     const exist = state.conversations.some((c) => c.id.toString() === convo.id.toString());
+                    console.log(setActiveconvoId);
 
                     return {
                         conversations: exist ? state.conversations : [convo, ...state.conversations],
-                        activeConversationId: convo.id,
+                        activeConversationId: setActiveconvoId ? convo.id : state.activeConversationId,
                         fakeConversation: null
                     }
                 })
@@ -206,7 +207,7 @@ export const useChatStore = create<ChatState>()(
                     set({loading: true});
                     const conversation = await chatService.createConversation(type, name, memberIds);
 
-                    get().addConvo(conversation);
+                    get().addConvo(conversation, true);
 
                     useSocketStore.getState().socket?.emit("join_conversation", conversation.id)
                 } catch (error) {
