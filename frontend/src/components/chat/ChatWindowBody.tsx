@@ -5,13 +5,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component"
 
 const ChatWindowBody = () => {
-    const {activeConversationId, conversations, messages: allMessages, fetchMessages} = useChatStore();
+    const {activeConversationId, conversations, messages: allMessages, fetchMessages, fakeConversation} = useChatStore();
     const [lastMessageStatus, setLastMessageStatus] = useState<"delivered" | "seen">("delivered");
 
     const messages = allMessages[activeConversationId!]?.items ?? [];
     const reversedMessages = [...messages].reverse();
     const hasMore = allMessages[activeConversationId!]?.hasMore ?? false;
-    const selectedConvo = conversations.find((c) => c.id === activeConversationId);
+    const selectedConvo = conversations.find((c) => c.id === activeConversationId) ?? (fakeConversation ?? null);
     const key = `chat-scroll-${activeConversationId}`;
 
     const messagesEndRef = useRef<HTMLDivElement>(null);

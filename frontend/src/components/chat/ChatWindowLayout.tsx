@@ -9,9 +9,9 @@ import { useEffect } from "react";
 
 
 const ChatWindowLayout = () => {
-	const {activeConversationId, conversations, messageLoading: loading, markAsSeen} = useChatStore();
+	const {activeConversationId, conversations, messageLoading: loading, markAsSeen, fakeConversation} = useChatStore();
 
-	const selectedConvo = conversations.find((c) => c.id === activeConversationId) ?? null;
+	const selectedConvo = conversations.find((c) => c.id === activeConversationId) ?? (fakeConversation ?? null);
 
 	useEffect(() => {
 		if (!selectedConvo) {

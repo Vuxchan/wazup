@@ -50,6 +50,8 @@ export interface ChatState {
     convoLoading: boolean;
     messageLoading: boolean;
     loading: boolean;
+    fakeConversation: Conversation | null;
+    setFakeConversation: (conversation: Conversation) => void;
     reset: () => void;
     setActiveConversation: (id: string | null) => void;
 

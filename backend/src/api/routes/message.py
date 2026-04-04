@@ -24,9 +24,6 @@ async def send_direct_message(session: SessionDep, current_user: CurrentUser, da
 
     conversation = crud.get_direct_conversation_for_message(session, sender_id, recipient_id)
 
-    if not conversation:
-        conversation = crud.create_direct_conversation(session, sender_id, recipient_id)
-
     message = crud.create_message(session, conversation, sender_id, content, data.img_url)
 
     crud.upd_conv_after_create_msg(session, conversation.id, message)

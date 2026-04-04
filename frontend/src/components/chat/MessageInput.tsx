@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const MessageInput = ({selectedConvo}: {selectedConvo: Conversation}) => {
     const {user} = useAuthStore();
-    const {sendDirectMessage, sendGroupMessage} = useChatStore();
+    const {sendDirectMessage, sendGroupMessage, createConversation, fakeConversation} = useChatStore();
     const [value, setValue] = useState("");
 
     if (!user) return;
@@ -24,6 +24,7 @@ const MessageInput = ({selectedConvo}: {selectedConvo: Conversation}) => {
             if (selectedConvo.type === "direct") {
                 const participants = selectedConvo.participants;
                 const otherUser = participants.filter((p) => p.id !== user.id)[0];
+                if (fakeConversation) await createConversation("direct", "", [otherUser.id]);
                 await sendDirectMessage(otherUser.id, currValue);
             } else {
                 await sendGroupMessage(selectedConvo.id, currValue);

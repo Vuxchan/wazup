@@ -14,8 +14,15 @@ export const useChatStore = create<ChatState>()(
             convoLoading: false,
             messageLoading: false,
             loading: false,
+            fakeConversation: null,
 
-            setActiveConversation: (id) => set({activeConversationId: id}),
+            setFakeConversation: (conversation) => {
+                set({fakeConversation: conversation, activeConversationId: null});
+            },
+
+            setActiveConversation: (id) => {
+                set({activeConversationId: id, fakeConversation: null});
+            },
             reset: () => {
                 set({
                     conversations: [],
@@ -23,6 +30,7 @@ export const useChatStore = create<ChatState>()(
                     activeConversationId: null,
                     convoLoading: false,
                     messageLoading: false,
+                    fakeConversation: null
                 })
             },
             fetchConversations: async () => {
@@ -189,6 +197,7 @@ export const useChatStore = create<ChatState>()(
                     return {
                         conversations: exist ? state.conversations : [convo, ...state.conversations],
                         activeConversationId: convo.id,
+                        fakeConversation: null
                     }
                 })
             },

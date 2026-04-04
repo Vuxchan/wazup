@@ -4,13 +4,48 @@ import { MessageCircleMore, User } from 'lucide-react';
 import { Card } from '../ui/card';
 import UserAvatar from '../chat/UserAvatar';
 import { useChatStore } from '@/stores/useChatStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import type { Conversation } from '@/types/chat';
 
 const FriendListModal = () => {
     const {friends} = useFriendStore();
-    const {createConversation} = useChatStore();
+    const {conversations, setActiveConversation, messages, fetchMessages, setFakeConversation} = useChatStore();
+    const {user} = useAuthStore();
 
-    const handleAddConversation = async (friendId: string) => {
-        await createConversation("direct", "", [friendId]);
+    const handleSelectFriend = async (friendId: string) => {
+        const selectedConversationId = conversations.filter((c) => c.type === "direct" && c.participants.some(p => p.id === friendId));
+        if (selectedConversationId.length === 0) {
+            const friend = friends.filter(f => f.id === friendId)[0];
+            const fakeConversation: Conversation = {
+                id: "", 
+                type: 'direct',
+                group: null,
+                participants: [{
+                    id: user?.id ?? "",
+                    displayName: user?.displayName ?? "",
+                    avatarUrl: user?.avatarUrl ?? "",
+                    joinedAt: user?.createdAt ?? "",
+                }, {
+                    id: friend?.id ?? "",
+                    displayName: friend?.displayName ?? "",
+                    avatarUrl: friend?.avatarUrl ?? "",
+                    joinedAt: ""
+                }],
+                lastMessageAt: "",
+                seenBy: [],
+                lastMessage: null,
+                unreadCounts: {},
+                createdAt: "",
+                updatedAt: "",
+            }
+            setFakeConversation(fakeConversation)
+            return;
+        }
+
+        setActiveConversation(selectedConversationId[0].id);
+        if (!messages[selectedConversationId[0].id]) {
+            await fetchMessages();
+        }
     }
 
     return (
@@ -31,7 +66,7 @@ const FriendListModal = () => {
                 <div className='space-y-2 mmax-h-50 overflow-y-auto'>
                     {friends.map((friend) => (
                         <Card key={friend.id}
-                            onClick={() => handleAddConversation(friend.id)}
+                            onClick={() => handleSelectFriend(friend.id)}
                             className='p-3 cursor-pointer transition-smooth hover:shadow-soft glass hover:bg-muted/30 group/friendCard'
                         >
                             <div className='flex items-center gap-3'>

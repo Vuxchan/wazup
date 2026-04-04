@@ -63,6 +63,10 @@ async def emit_new_message(conversation_update: ConversationUpdate):
     data = conversation_update.model_dump(mode="json", by_alias=True)
     await sio.emit("new_message", data, str(conversation_update.conversation.id))
 
+async def emit_new_direct(conversation: ConversationPublic, user_id: UUID):
+    data = conversation.model_dump(mode="json", by_alias=True)
+    await sio.emit("new_direct", data, str(user_id))
+
 async def emit_read_message(conversation_update: ReadMessageUpdate):
     data = conversation_update.model_dump(mode="json", by_alias=True)
     await sio.emit("read_message", data, str(conversation_update.conversation.id))

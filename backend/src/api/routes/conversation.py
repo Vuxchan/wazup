@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
-from src.models import Conversation, ConversationType
+from src.models import ConversationType
 from src.schemas import ConversationCreate, ConversationPublic, MessagePagination, ConversationListPublic, ReadMessageUpdate
 from src import crud
 from typing import Optional, Any
 from uuid import UUID
-from src.core.socket import emit_read_message, emit_new_group
+from src.core.socket import emit_read_message, emit_new_group, emit_new_direct
 
 router = APIRouter(tags=["conversation"], prefix="/conversations")
 
@@ -35,6 +35,7 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
                 conversation = crud.create_conversation_with_participants(session, [user_id, participant_id], "direct")
 
             conversation_public = ConversationPublic.from_conversation(conversation)
+            await emit_new_direct(conversation_public, participant_id)
 
         case ConversationType.GROUP:
             if not name or len(member_ids) < 2:

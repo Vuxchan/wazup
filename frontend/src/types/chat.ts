@@ -30,7 +30,7 @@ export interface LastMessage {
 export interface Conversation {
     id: string;   
     type: "direct" | "group";
-    group: Group; 
+    group: Group | null; 
     participants: Participant[];
     lastMessageAt: string;
     seenBy: SeenUser[];
