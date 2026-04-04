@@ -7,7 +7,7 @@ from src.models.conversation import Conversation, ConversationType
 from src.models.conversation_participant import ConversationParticipant
 from src.models.message import Message
 from src.models import ConversationGroup, Role
-from src.schemas import MessagePublic, ConversationPublic, ConversationCreate
+from src.schemas import MessagePublic, ConversationPublic
 from src.schemas.user import UserCreate
 from src.schemas.friend import FriendRequestCreate, FriendRequestFilter
 from src.core.security import Hasher
@@ -159,22 +159,27 @@ def get_conversation_by_id(session: Session, conversation_id: UUID) -> Conversat
     conversation = session.exec(statement).first()
     return conversation
 
-def create_participant(conversation_id: UUID, user_id: UUID, user: User) -> ConversationParticipant:
+def create_participant(conversation_id: UUID, user_id: UUID) -> ConversationParticipant:
     participant = ConversationParticipant(
         conversation_id=conversation_id,
         user_id=user_id,
-        user=user
     )
     return participant
 
-def create_conversation_with_participants(session: Session, member_ids: List[UUID], type: ConversationType, name: Optional[str] = None) -> Conversation:
+def create_conversation_with_participants(session: Session, member_ids: List[UUID], type: ConversationType, name: Optional[str] = None) -> ConversationPublic:
     conversation = Conversation(type=type)
     session.add(conversation)
     session.flush()
 
-    statement = select(User).where(User.id.in_(member_ids))
+    statement = select(
+        User.id, 
+        User.display_name, 
+        User.avatar_url, 
+        User.username,
+    ).where(User.id.in_(member_ids))
     users = session.exec(statement).all()
-    participants = [create_participant(conversation.id, u.id, u) for u in users]
+    print(users)
+    participants = [create_participant(conversation.id, uid) for uid in member_ids]
 
     if type == ConversationType.GROUP:
         group = ConversationGroup(
@@ -188,11 +193,10 @@ def create_conversation_with_participants(session: Session, member_ids: List[UUI
 
     session.add_all(participants)
 
-    conversation.participants = participants
+    conversation_public = ConversationPublic.first_create(conversation, users)
 
     session.commit()
-    session.refresh(conversation)
-    return conversation
+    return conversation_public
 
 def create_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Conversation: 
     return create_conversation_with_participants(session, [sender_id, recipient_id], "direct")
@@ -246,7 +250,7 @@ def upd_conv_after_create_msg(session: Session, conversation_id: UUID, message: 
     )
     session.flush()
 
-def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Optional[Conversation]:
+def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUID) -> Optional[ConversationPublic]:
     statement = (
         select(Conversation)
         .options(selectinload(Conversation.participants).selectinload(ConversationParticipant.user))
@@ -257,7 +261,8 @@ def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUI
         .having(func.count(ConversationParticipant.user_id) == 2)
     )
     conversation = session.exec(statement).first()
-    return conversation
+    conversation_public = ConversationPublic.from_conversation(conversation) if conversation else None
+    return conversation_public
 
 def get_all_conversations(session: Session, user_id: UUID) -> List[ConversationPublic]:
     statement = (

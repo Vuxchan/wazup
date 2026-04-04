@@ -20,7 +20,17 @@ class ParticipantPublic(SQLModel):
             id=participant.user_id,
             display_name=participant.user.display_name,
             avatar_url=participant.user.avatar_url,
+            username=participant.user.username,
             joined_at=participant.joined_at
+        )
+    
+    @classmethod
+    def first_create(cls, user: User) -> "ParticipantPublic":
+        return cls(
+            id=user.id,
+            display_name=user.display_name,
+            avatar_url=user.avatar_url,
+            username=user.username
         )
     
     model_config = config
@@ -28,7 +38,8 @@ class ParticipantPublic(SQLModel):
     id: UUID
     display_name: str
     avatar_url: Optional[str] = None
-    joined_at: datetime
+    username: str
+    joined_at: Optional[datetime] = None
 
 class LastMessageSenderPublic(SQLModel):
     @classmethod
@@ -92,6 +103,17 @@ class ConversationPublic(SQLModel):
                 for p in conversation.participants
             },
             seen_by= [p.user_id for p in conversation.participants if p.unread_count == 0 and p.user_id != conversation.last_message.sender_id] if conversation.last_message else []
+        )
+    
+    @classmethod
+    def first_create(cls, conversation: Conversation, users: List[User]) -> "ConversationPublic":
+        return cls(
+            id=conversation.id,
+            type=conversation.type,
+            created_at=conversation.created_at,
+            participants=[ParticipantPublic.first_create(user) for user in users],
+            unread_counts={},
+            seen_by=[]
         )
     
     model_config = config

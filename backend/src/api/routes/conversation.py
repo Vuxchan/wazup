@@ -21,7 +21,6 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Can only add friends to your group {not_friend_ids}")
 
     conversation = None
-    conversation_public = None
     match type:
         case ConversationType.DIRECT:
             if len(member_ids) != 1:
@@ -29,13 +28,12 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
 
             participant_id = member_ids[0]
 
-            conversation = crud.get_direct_conversation(session, user_id, participant_id)
+            conversation = crud.get_direct_conversation(session, user_id, participant_id) # Edge case 
 
             if not conversation:
                 conversation = crud.create_conversation_with_participants(session, [user_id, participant_id], "direct")
 
-            conversation_public = ConversationPublic.from_conversation(conversation)
-            await emit_new_direct(conversation_public, participant_id)
+            await emit_new_direct(conversation, participant_id)
 
         case ConversationType.GROUP:
             if not name or len(member_ids) < 2:
@@ -43,11 +41,10 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
             
             conversation = crud.create_conversation_with_participants(session, [user_id] + member_ids, "group", name)
 
-            conversation_public = ConversationPublic.from_conversation(conversation)
             for uid in member_ids:
-                await emit_new_group(conversation_public, uid)
+                await emit_new_group(conversation, uid)
 
-    return conversation_public
+    return conversation
 
 @router.get("", status_code=status.HTTP_200_OK, response_model=ConversationListPublic)
 def get_conversations(session: SessionDep, current_user: CurrentUser) -> Any:
