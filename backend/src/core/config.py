@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_TIME: int = 60 * 24 * 7
     FRONTEND_HOST: str = "http://localhost:5173"
 

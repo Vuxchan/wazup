@@ -79,7 +79,7 @@ type SignInFormValues = z.infer<typeof signInSchema>
 
                 <div className="text-center text-sm">
                     Don't have an account? {""}
-                    <a href="/signin" className="underline underline-offset-4">
+                    <a href="/signup" className="underline underline-offset-4">
                     Sign up
                     </a>
                 </div>

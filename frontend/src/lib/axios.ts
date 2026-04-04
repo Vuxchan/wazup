@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use((res) => res, async (error) => {
     const originalRequest = error.config;
 
-    if (originalRequest.url.includes("/api/v1/auth/signup") || originalRequest.url.includes("/api/v1/auth/signin") || originalRequest.url.includes("/api/v1/auth/refresh")) {
+    if (originalRequest.url.includes("/auth/signup") || originalRequest.url.includes("/auth/signin") || originalRequest.url.includes("/auth/refresh")) {
         return Promise.reject(error);
     }
 
@@ -29,7 +29,7 @@ api.interceptors.response.use((res) => res, async (error) => {
         originalRequest._retryCount += 1;
 
         try {
-            const res = await api.post("/api/v1/auth/refresh", { withCredentials: true });
+            const res = await api.post("/auth/refresh", { withCredentials: true });
             const newAccessToken = res.data.access_token;
 
             useAuthStore.getState().setAccessToken(newAccessToken);
