@@ -1,24 +1,14 @@
 from sqlmodel import Session, select, and_, or_, func, update, case
 from sqlalchemy.orm import selectinload
-from src.models.user import User
-from src.models.friendship import Friendship
-from src.models.friend_request import FriendRequest
-from src.models.conversation import Conversation, ConversationType
-from src.models.conversation_participant import ConversationParticipant
-from src.models.message import Message
-from src.models import ConversationGroup, Role
-from src.schemas import MessagePublic, ConversationPublic
-from src.schemas.user import UserCreate
-from src.schemas.friend import FriendRequestCreate, FriendRequestFilter
+from src.models import ConversationGroup, Role, Friendship, FriendRequest, Conversation, ConversationParticipant, ConversationType, Message, User
+from src.schemas import MessagePublic, ConversationPublic, MessagePagination, UserCreate, FriendRequestCreate, FriendRequestFilter
 from src.core.security import Hasher
 from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
 from uuid import UUID
 from hashlib import sha256
-from typing import Optional, List, Dict
-from fastapi_pagination import set_params, set_page
-from fastapi_pagination.cursor import CursorPage, CursorParams
-from fastapi_pagination.ext.sqlalchemy import paginate
+from typing import Optional, List
+import base64
 
 DUMMY_HASH = "$2b$12$YLLg/ZlJqYLAANUOXuT3OuxYGMXtqgAUNohYmD5BzUJKH7gPpo7Fm"
 
@@ -149,13 +139,17 @@ def get_session_by_token(session: Session, token: str) -> Sessions:
     user_session = session.exec(statement).first()
     return user_session 
 
-def get_conversation_by_id(session: Session, conversation_id: UUID) -> Conversation:
-    statement = (
-        select(Conversation)
-        .options(selectinload(Conversation.participants))
-        .options(selectinload(Conversation.last_message))
-        .where(Conversation.id == conversation_id)
-    )
+def get_conversation_by_id(session: Session, conversation_id: UUID, get_participant: bool = False, get_last_message: bool = False) -> Conversation:
+    statement = select(Conversation)
+
+    if get_participant:
+        statement = statement.options(selectinload(Conversation.participants))
+
+    if get_last_message:
+        statement = statement.options(selectinload(Conversation.last_message))
+
+    statement = statement.where(Conversation.id == conversation_id)
+
     conversation = session.exec(statement).first()
     return conversation
 
@@ -178,7 +172,6 @@ def create_conversation_with_participants(session: Session, member_ids: List[UUI
         User.username,
     ).where(User.id.in_(member_ids))
     users = session.exec(statement).all()
-    print(users)
     participants = [create_participant(conversation.id, uid) for uid in member_ids]
 
     if type == ConversationType.GROUP:
@@ -277,13 +270,39 @@ def get_all_conversations(session: Session, user_id: UUID) -> List[ConversationP
     conversations = session.exec(statement).all()
     return [ConversationPublic.from_conversation(c) for c in conversations]
 
-def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> CursorPage[MessagePublic]:
-    set_page(CursorPage[Message])
-    set_params(CursorParams(size=size, cursor=cursor))
+def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> MessagePagination:
+    if cursor:
+        decoded = base64.b64decode(cursor).decode()
+        timestamp_str, msg_id = decoded.split("::")
+        cursor_timestamp = datetime.fromisoformat(timestamp_str)
+        cursor_id = UUID(msg_id)
 
-    page = paginate(session, select(Message).where(Message.conversation_id == conversation_id).order_by(Message.created_at.desc(), Message.id.desc()))
-    page.items = [MessagePublic.model_validate(m) for m in page.items]
-    return page
+    statement = select(Message).where(Message.conversation_id == conversation_id)
+
+    if cursor:
+        statement = statement.where(
+            or_(
+                Message.created_at < cursor_timestamp, 
+                and_(Message.created_at == cursor_timestamp, Message.id < cursor_id)
+            )
+        )
+
+    statement = statement.order_by(Message.created_at.desc(), Message.id.desc()).limit(size + 1)
+
+    page = session.exec(statement).all()
+    has_next = len(page) > size
+    items = page[:size]
+
+    next_cursor = None
+    if has_next and items:
+        last_item = items[-1]
+        cursor_raw = f"{last_item.created_at.isoformat()}::{last_item.id}"
+        next_cursor = base64.b64encode(cursor_raw.encode()).decode()
+
+    return MessagePagination(
+        messages=[MessagePublic.model_validate(m) for m in items],
+        cursor=next_cursor
+    )
 
 def check_friendships(session: Session, user_id: UUID, friend_ids: List[UUID]) -> List[UUID]:
     friend_ids = set(friend_ids)

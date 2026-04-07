@@ -52,11 +52,11 @@ def get_conversations(session: SessionDep, current_user: CurrentUser) -> Any:
     conversations = crud.get_all_conversations(session, user_id)
     return ConversationListPublic(conversations=conversations)
 
-@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=MessagePagination)
+@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=MessagePagination) # optimized
 def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> Any:
     user_id = current_user.id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id)
+    conversation = crud.get_conversation_by_id(session, conversation_id, get_participant=True)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
@@ -64,16 +64,13 @@ def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a conversation member")
 
     page = crud.paginate_messages(session, conversation_id, size, cursor)
-    return MessagePagination(
-        messages=page.items[::-1],
-        cursor=page.next_page
-    )
+    return page
 
 @router.patch("/{conversation_id}/seen")
 async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversation_id: UUID) -> None:
     user_id = current_user.id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id)
+    conversation = crud.get_conversation_by_id(session, conversation_id, True, True)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     

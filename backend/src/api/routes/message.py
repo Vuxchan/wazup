@@ -42,7 +42,7 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
     content = data.content
     conversation_id = data.conversation_id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id)
+    conversation = crud.get_conversation_by_id(session, conversation_id, True, True)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
