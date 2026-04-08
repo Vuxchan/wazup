@@ -4,7 +4,7 @@ from uuid import UUID
 from datetime import datetime
 from src.models import ConversationType, ConversationParticipant, Message, Conversation, User
 from src.utils import config
-from .message import MessagePublic
+from .message import LastMessagePublic
 
 class ConversationCreate(SQLModel):
     model_config = config
@@ -41,38 +41,6 @@ class ParticipantPublic(SQLModel):
     username: str
     joined_at: Optional[datetime] = None
 
-class LastMessageSenderPublic(SQLModel):
-    @classmethod
-    def from_last_message_sender(cls, sender: User) -> "LastMessageSenderPublic":
-        return cls(
-            id=sender.id,
-            display_name=sender.display_name,
-            avatar_url=sender.avatar_url
-        )
-    
-    model_config = config
-
-    id: UUID
-    display_name: str
-    avatar_url: Optional[str] = None
-
-class LastMessagePublic(SQLModel):
-    @classmethod
-    def from_last_message(cls, last_message: Message) -> "LastMessagePublic":
-        return cls(
-            id=last_message.id,
-            content=last_message.content,
-            created_at=last_message.created_at,
-            sender=LastMessageSenderPublic.from_last_message_sender(last_message.sender)
-        )
-    
-    model_config = config
-
-    id: UUID
-    content: str
-    created_at: datetime
-    sender: LastMessageSenderPublic
-
 class GroupConversationPublic(SQLModel):
     model_config = config
 
@@ -91,7 +59,7 @@ class ConversationPublic(SQLModel):
             created_at=conversation.created_at,
             participants=[ParticipantPublic.from_participant(p) for p in conversation.participants],
             last_message=(
-                LastMessagePublic.from_last_message(conversation.last_message)
+                LastMessagePublic.from_last_message(conversation.last_message, conversation.last_message.sender)
                 if conversation.last_message else None
             ),
             group=(
@@ -149,18 +117,19 @@ class ConversationUpdate(SQLModel):
 
 class NewMessageUpdate(SQLModel):
     @classmethod
-    def from_conversation_update(cls, message: Message, sender: User) -> "NewMessageUpdate":
+    def from_conversation_update(cls, last_message: Message, sender: User) -> "NewMessageUpdate":
         return cls(
-            message=MessagePublic.model_validate(message),
-            sender=sender,
-            conversation=ConversationUpdate.from_conversation_update(message),
+            id=last_message.conversation_id,
+            last_message=LastMessagePublic.from_last_message(last_message, sender),
+            last_message_at=last_message.created_at
         )
     
     model_config = config
 
-    message: MessagePublic
-    conversation: ConversationUpdate
-    sender: User
+    id: UUID
+    seen_by: List[UUID] = []
+    last_message: LastMessagePublic
+    last_message_at: datetime
 
 class ReadMessageUpdate(SQLModel):
     @classmethod

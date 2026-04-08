@@ -1,7 +1,7 @@
 import socketio
 from src.api.deps import get_session, get_current_user
 from src import crud
-from src.schemas import NewMessageUpdate, ReadMessageUpdate, ConversationPublic
+from src.schemas import NewMessageUpdate, ReadMessageUpdate, ConversationPublic, MessagePublic
 from uuid import UUID
 
 sio = socketio.AsyncServer(
@@ -59,9 +59,12 @@ async def disconnect(sid) -> None:
 
     print(f'{sid} disconnected')
 
-async def emit_new_message(conversation_update: NewMessageUpdate):
-    data = conversation_update.model_dump(mode="json", by_alias=True)
-    await sio.emit("new_message", data, str(conversation_update.conversation.id))
+async def emit_new_message(conversation_update: NewMessageUpdate, message: MessagePublic):
+    data = { 
+        "conversation": conversation_update.model_dump(mode="json", by_alias=True), 
+        "message": message.model_dump(mode="json", by_alias=True)
+    }
+    await sio.emit("new_message", data, str(conversation_update.id))
 
 async def emit_new_direct(conversation: ConversationPublic, user_id: UUID):
     data = conversation.model_dump(mode="json", by_alias=True)

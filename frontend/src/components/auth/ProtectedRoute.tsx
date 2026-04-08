@@ -1,9 +1,11 @@
 import { useAuthStore } from "@/stores/useAuthStore"
+import { useChatStore } from "@/stores/useChatStore";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 
 const ProtectedRoute = () => {
     const { accessToken, user, loading, refresh, fetchMe } = useAuthStore();
+    const { fetchConversations } = useChatStore();
     const [starting, setStarting] = useState(true);
 
     const init = async () => {
@@ -15,6 +17,7 @@ const ProtectedRoute = () => {
             await fetchMe();
         }
 
+        await fetchConversations();
         setStarting(false);
     }
 

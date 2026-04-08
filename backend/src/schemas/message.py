@@ -3,6 +3,8 @@ from uuid import UUID
 from datetime import datetime
 from typing import List, Optional
 from src.utils import config
+from .user import LastMessageSenderPublic
+from src.models import User
 
 class BaseMessage(SQLModel):
     content: str
@@ -32,3 +34,20 @@ class MessagePagination(SQLModel):
 
 class Message(SQLModel):
     message: str
+
+class LastMessagePublic(SQLModel):
+    @classmethod
+    def from_last_message(cls, last_message: Message, sender: User) -> "LastMessagePublic":
+        return cls(
+            id=last_message.id,
+            content=last_message.content,
+            created_at=last_message.created_at,
+            sender=LastMessageSenderPublic.from_last_message_sender(sender)
+        )
+    
+    model_config = config
+
+    id: UUID
+    content: str
+    created_at: datetime
+    sender: LastMessageSenderPublic

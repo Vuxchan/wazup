@@ -7,7 +7,7 @@ from src.core.socket import emit_new_message
 
 router = APIRouter(tags=["message"], prefix="/messages")
 
-@router.post("/direct", status_code=status.HTTP_201_CREATED, response_model=MessagePublic)
+@router.post("/direct", status_code=status.HTTP_201_CREATED, response_model=MessagePublic) # optimized
 async def send_direct_message(session: SessionDep, current_user: CurrentUser, data: DirectMessageCreate) -> Any:
     sender_id = current_user.id
     recipient_id = data.recipient_id
@@ -28,9 +28,9 @@ async def send_direct_message(session: SessionDep, current_user: CurrentUser, da
 
     crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user))
-
     res = MessagePublic.model_validate(message)
+
+    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user), res)
 
     session.commit()
 

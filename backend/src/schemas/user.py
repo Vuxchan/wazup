@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 from src.utils import config
+from src.models import User
 
 #Request models
 class UserCreate(SQLModel):
@@ -33,4 +34,16 @@ class UserDisplay(SQLModel):
     id: UUID
     username: str
     display_name: Optional[str]
-    avatar_url: Optional[str]
+    avatar_url: Optional[str] = None
+
+class LastMessageSenderPublic(UserDisplay):
+    @classmethod
+    def from_last_message_sender(cls, sender: User) -> "LastMessageSenderPublic":
+        return cls(
+            id=sender.id,
+            display_name=sender.display_name,
+            avatar_url=sender.avatar_url,
+            username=sender.username
+        )
+    
+    model_config = config
