@@ -300,7 +300,7 @@ def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor
         next_cursor = base64.b64encode(cursor_raw.encode()).decode()
 
     return MessagePagination(
-        messages=[MessagePublic.model_validate(m) for m in items],
+        messages=[MessagePublic.model_validate(m) for m in items[::-1]],
         cursor=next_cursor
     )
 
@@ -332,11 +332,19 @@ def get_conversation_ids(session: Session, user_id: UUID) -> List[str]:
     result = [str(cid) for cid in conversation_ids]
     return result
 
-def upd_unread_count(session: Session, participant: ConversationParticipant) -> None:
-    participant.unread_count = 0
-    session.add(participant)
+def upd_unread_count(session: Session, participant_id: UUID, conversation_id: UUID) -> None:
+    statement = (
+        update(ConversationParticipant)
+        .where(
+            and_(
+                ConversationParticipant.user_id == participant_id, 
+                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.unread_count > 0
+            )
+        ).values(unread_count=0)
+    )
+    session.exec(statement)
     session.commit()
-    session.refresh(participant)
 
 def update_avatar(session: Session, avatar_url: str, avatar_id: str, user: User) -> None:
     user.avatar_url = avatar_url

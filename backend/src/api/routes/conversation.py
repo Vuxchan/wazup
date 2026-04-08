@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from src.models import ConversationType
-from src.schemas import ConversationCreate, ConversationPublic, MessagePagination, ConversationListPublic, ReadMessageUpdate
+from src.schemas import ConversationCreate, ConversationPublic, MessagePagination, ConversationListPublic, ReadMessageUpdate, Message
 from src import crud
 from typing import Optional, Any
 from uuid import UUID
@@ -66,22 +66,24 @@ def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id
     page = crud.paginate_messages(session, conversation_id, size, cursor)
     return page
 
-@router.patch("/{conversation_id}/seen")
-async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversation_id: UUID) -> None:
+@router.patch("/{conversation_id}/seen", status_code=status.HTTP_200_OK) # optimized
+async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversation_id: UUID) -> Message:
     user_id = current_user.id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id, True, True)
+    conversation = crud.get_conversation_by_id(session, conversation_id, False, True)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
     last_message = conversation.last_message
     if not last_message:
-        return
+        return Message(message="Don't have unread message")
     
     if last_message.sender_id == str(user_id):
-        return
+        return Message(message="The sender doesn't need to mark as seen")
     
-    participant = next(filter(lambda p: p.user_id == user_id, conversation.participants))
-    crud.upd_unread_count(session, participant)
+    data = ReadMessageUpdate.from_read_message_update(conversation.id, current_user.id)
+    crud.upd_unread_count(session, user_id, conversation_id)
 
-    await emit_read_message(ReadMessageUpdate.from_read_message_update(conversation, user_id))
+    await emit_read_message(conversation_update=data)
+
+    return Message(message="Marked as seen")

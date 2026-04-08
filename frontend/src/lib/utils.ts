@@ -15,8 +15,10 @@ export const formatOnlineTime = (date: Date) => {
     const diffMonths = Math.floor(diffDays / 30);
     const diffYears = Math.floor(diffDays / 365);
 
+    if (diffMins <= 0) return "now";
+
     if (diffMins < 60) {
-        return `${diffMins}m`; // 5m, 45m
+        return `${diffMins} min`; // 5min, 45min
     } else if (diffHours < 24) {
         return `${diffHours}h`; // 3h, 20h
     } else if (diffDays < 30) {

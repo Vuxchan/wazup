@@ -132,47 +132,45 @@ class ConversationPublic(SQLModel):
 class ConversationListPublic(SQLModel):
     conversations: List[ConversationPublic]
 
-class ConversationSocketIO(SQLModel):
+class ConversationUpdate(SQLModel):
     @classmethod
-    def from_conversation_socket_io(cls, last_message: Message) -> "ConversationSocketIO":
+    def from_conversation_update(cls, last_message: Message) -> "ConversationUpdate":
         return cls(
             id=last_message.conversation_id,
-            last_message=last_message,
+            last_message=LastMessagePublic.from_last_message(last_message),
             last_message_at=last_message.created_at
         )
 
     model_config = config
 
     id: UUID
-    last_message: Message
+    last_message: LastMessagePublic
     last_message_at: datetime
 
-class ConversationUpdate(SQLModel):
+class NewMessageUpdate(SQLModel):
     @classmethod
-    def from_conversation_update(cls, message: Message, sender: User) -> "ConversationUpdate":
+    def from_conversation_update(cls, message: Message, sender: User) -> "NewMessageUpdate":
         return cls(
             message=MessagePublic.model_validate(message),
             sender=sender,
-            conversation=ConversationSocketIO.from_conversation_socket_io(message),
+            conversation=ConversationUpdate.from_conversation_update(message),
         )
     
     model_config = config
 
     message: MessagePublic
-    conversation: ConversationSocketIO
+    conversation: ConversationUpdate
     sender: User
 
 class ReadMessageUpdate(SQLModel):
     @classmethod
-    def from_read_message_update(cls, conversation: Conversation, user_id: User) -> "ReadMessageUpdate":
+    def from_read_message_update(cls, conversation_id: UUID, recipient_id: UUID) -> "ReadMessageUpdate":
         return cls(
-            conversation=ConversationSocketIO.from_conversation_socket_io(conversation.last_message),
-            last_message=LastMessagePublic.from_last_message(conversation.last_message),
-            seen_by=[user_id]
+            id=conversation_id,
+            seen_by=[recipient_id]
         )
 
     model_config = config
 
-    conversation: ConversationSocketIO
-    last_message: LastMessagePublic
+    id: UUID
     seen_by: List[UUID]

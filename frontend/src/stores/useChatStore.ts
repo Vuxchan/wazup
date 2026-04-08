@@ -193,7 +193,6 @@ export const useChatStore = create<ChatState>()(
             addConvo: (convo, setActiveconvoId) => {
                 set((state) => {
                     const exist = state.conversations.some((c) => c.id.toString() === convo.id.toString());
-                    console.log(setActiveconvoId);
 
                     return {
                         conversations: exist ? state.conversations : [convo, ...state.conversations],

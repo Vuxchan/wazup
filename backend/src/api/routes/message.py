@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from typing import Any
-from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate, ConversationUpdate
+from src.schemas import DirectMessageCreate, MessagePublic, GroupMessageCreate, NewMessageUpdate
 from src import crud
 from src.core.socket import emit_new_message
 
@@ -28,7 +28,7 @@ async def send_direct_message(session: SessionDep, current_user: CurrentUser, da
 
     crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user))
+    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user))
 
     res = MessagePublic.model_validate(message)
 
@@ -56,6 +56,6 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
 
     unread_counts = crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(ConversationUpdate.from_conversation_update(message, current_user, unread_counts))
+    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user, unread_counts))
 
     return message
