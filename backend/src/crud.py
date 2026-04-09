@@ -300,12 +300,12 @@ def get_all_conversations(session: Session, user: User) -> List[ConversationDisp
     conversations = list(conv_dict.values())
     return conversations
 
-def get_participants_read_status(session: Session, conversation_id: UUID) -> dict:
+def get_participants_read_status(session: Session, conversation: Conversation) -> dict:
     statement = (
-        select(ConversationParticipant.user_id, Message.created_at, Message.sender_id)
+        select(ConversationParticipant.user_id, Message.created_at, Message.sender_id, Message.id)
         .select_from(ConversationParticipant)
         .join(Message, isouter=True, onclause=ConversationParticipant.last_read_message_id == Message.id)
-        .where(ConversationParticipant.conversation_id == conversation_id)
+        .where(ConversationParticipant.conversation_id == conversation.id)
     )
 
     rows = session.exec(statement).all()
@@ -315,7 +315,7 @@ def get_participants_read_status(session: Session, conversation_id: UUID) -> dic
                 row.user_id: row.created_at
                 for row in rows
             },
-        "seen_by": [row.user_id for row in rows if row.user_id != row.sender_id]
+        "seen_by": [row.user_id for row in rows if row.user_id != row.sender_id and row.created_at and row.id == conversation.last_message_id]
     }
 
 def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> dict:

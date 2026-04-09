@@ -5,12 +5,6 @@ export interface Participant {
     joinedAt: string;
 }
 
-export interface SeenUser {
-    _id: string;    
-    displayName?: string;
-    avatarUrl?: string | null;
-}
-
 export interface Group {
     name: string;
     createdBy: string;
@@ -33,7 +27,7 @@ export interface Conversation {
     group: Group | null; 
     participants: Participant[];
     lastMessageAt: string;
-    seenBy: SeenUser[];
+    seenBy: string[];
     lastMessage: LastMessage | null;
     unreadCounts: Record<string, number>;
     createdAt: string;

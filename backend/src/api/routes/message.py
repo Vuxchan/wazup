@@ -42,7 +42,7 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
     content = data.content
     conversation_id = data.conversation_id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id, True, True)
+    conversation = crud.get_conversation_by_id(session, conversation_id, True)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
@@ -54,8 +54,12 @@ async def send_group_message(session: SessionDep, current_user: CurrentUser, dat
     
     message = crud.create_message(session, conversation, sender_id, content, data.img_url)
 
-    unread_counts = crud.upd_conv_after_create_msg(session, conversation.id, message)
+    crud.upd_conv_after_create_msg(session, conversation.id, message)
 
-    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user, unread_counts))
+    res = MessagePublic.model_validate(message)
+
+    await emit_new_message(NewMessageUpdate.from_conversation_update(message, current_user), res)
+
+    session.commit()
 
     return message

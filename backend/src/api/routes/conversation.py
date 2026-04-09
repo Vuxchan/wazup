@@ -59,12 +59,12 @@ def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
-    participants_read_status = crud.get_participants_read_status(session, conversation_id)
+    participants_read_status = crud.get_participants_read_status(session, conversation)
     if user_id not in participants_read_status["participants_last_read_message"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a conversation member")
 
     page = crud.paginate_messages(session, conversation_id, size, cursor)
-
+    
     return FetchMessagesResponse(
         participants_last_read_message=participants_read_status["participants_last_read_message"],
         seen_by=participants_read_status["seen_by"],

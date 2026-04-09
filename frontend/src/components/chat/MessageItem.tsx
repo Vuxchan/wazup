@@ -2,17 +2,16 @@ import { cn, formatMessageTime } from "@/lib/utils";
 import type { Conversation, Message, Participant } from "@/types/chat";
 import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
+import SeenBadge from "./SeenBadge";
 
 interface MessageItemProps {
     message: Message;
     index: number;
     messages: Message[];
     selectedConvo: Conversation;
-    lastMessageStatus: "delivered" | "seen";
 }
 
-const MessageItem = ({message, index, messages, selectedConvo, lastMessageStatus}: MessageItemProps) => {
+const MessageItem = ({message, index, messages, selectedConvo}: MessageItemProps) => {
     const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
 
     const isShowTime = index === 0 || new Date(message.createdAt).getTime() - new Date(prev?.createdAt || 0).getTime() > 300000;
@@ -22,6 +21,8 @@ const MessageItem = ({message, index, messages, selectedConvo, lastMessageStatus
     const participant = selectedConvo.participants.find(
         (p: Participant) => p.id.toString() === message.senderId.toString()
     )
+
+    const seenBy = selectedConvo.participants.filter((p) => selectedConvo.seenBy.includes(p.id))   
     
     return (
         <>
@@ -48,7 +49,7 @@ const MessageItem = ({message, index, messages, selectedConvo, lastMessageStatus
                     {/* seen/delivered */}
                     {
                         message.isOwn && message.id === selectedConvo.lastMessage?.id && (
-                            <Badge variant="outline" className={cn("text-xs px-1.5 py-0.5 h-4 border-0", lastMessageStatus === "seen" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>{lastMessageStatus}</Badge>
+                            <SeenBadge seenBy={seenBy}/>
                         )
                     }
                 </div>

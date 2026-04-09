@@ -58,8 +58,16 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         });
 
         socket.on("read_message", ({conversation}) => {
+            const {conversations} = useChatStore.getState();
+            const oldConversation = conversations.filter((c) => c.id === conversation.id)[0];
+            const seenBy = [
+                ...oldConversation.seenBy,
+                ...conversation.seenBy 
+            ];
+
             const updated = {
                 ...conversation,
+                seenBy
             }
 
             useChatStore.getState().updateConversation(updated);

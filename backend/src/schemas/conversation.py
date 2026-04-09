@@ -118,7 +118,7 @@ class ConversationPublic(SQLModel):
 class FetchMessagesResponse(SQLModel):
     model_config = config
 
-    participants_last_read_message: Dict[UUID, datetime] = {}
+    participants_last_read_message: Dict[UUID, Optional[datetime]] = {}
     seen_by: List[UUID] = []
     messages: List[MessagePublic]
     cursor: Optional[str]
