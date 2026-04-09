@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAuthStore } from "./useAuthStore";
 import { useSocketStore } from "./useSocketStore";
+import type { Message } from "@/types/chat";
 
 export const useChatStore = create<ChatState>()(
     persist(
@@ -60,12 +61,14 @@ export const useChatStore = create<ChatState>()(
                 set({messageLoading: true});
 
                 try {
-                    const {messages: fetched, cursor} = await chatService.fetchMessages(convoId, nextCursor)
+                    const {messages, cursor, seenBy} = await chatService.fetchMessages(convoId, nextCursor)
 
-                    const processed = fetched.map((m) => ({
+                    const processed = messages.map((m: Message) => ({
                         ...m,
                         isOwn: m.senderId === user?.id,
                     }))
+
+                    set((state) => ({conversations: state.conversations.map((c) => c.id === convoId ? {...c, seenBy} : c)}));
 
                     set((state) => {
                         const prev = state.messages[convoId]?.items ?? [];

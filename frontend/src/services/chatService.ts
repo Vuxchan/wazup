@@ -1,10 +1,5 @@
 import api from "@/lib/axios";
-import type { ConversationResponse, Message } from "@/types/chat";
-
-interface FetchMessageProps {
-    messages: Message[];
-    cursor?: string;
-}
+import type { ConversationResponse } from "@/types/chat";
 
 const pageLimit = 50;
 
@@ -12,13 +7,13 @@ export const chatService = {
     async fetchConversations(): Promise<ConversationResponse> {
         const res = await api.get("/conversations");
 
-        return res.data;
+        return {conversations: res.data};
     },
 
-    async fetchMessages(id: string, cursor?: string): Promise<FetchMessageProps> {
+    async fetchMessages(id: string, cursor?: string) {
         const res = await api.get(`/conversations/${id}/messages?limit=${pageLimit}&cursor=${cursor}`)
 
-        return {messages: res.data.messages, cursor: res.data.cursor};
+        return {messages: res.data.messages, cursor: res.data.cursor, seenBy: res.data.seenBy};
     },
      
     async sendDirectMessage(recipientId: string, content: string = "", imgUrl?: string) {

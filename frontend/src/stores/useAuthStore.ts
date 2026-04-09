@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
                     get().setAccessToken(accessToken);
 
                     await get().fetchMe();
-                    useChatStore.getState().fetchConversations();
 
                     toast.success("Welcome back to Wazup!");
                 } catch (error) {

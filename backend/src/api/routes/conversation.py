@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 from src.api.deps import SessionDep, CurrentUser
 from src.models import ConversationType
-from src.schemas import ConversationCreate, ConversationPublic, MessagePagination, ConversationListPublic, ReadMessageUpdate, Message
+from src.schemas import ConversationCreate, ConversationPublic, ConversationDisplay, ReadMessageUpdate, Message, FetchMessagesResponse
 from src import crud
-from typing import Optional, Any
+from typing import Optional, Any, List
 from uuid import UUID
 from src.core.socket import emit_read_message, emit_new_group, emit_new_direct
 
@@ -46,24 +46,31 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
 
     return conversation
 
-@router.get("", status_code=status.HTTP_200_OK, response_model=ConversationListPublic) # optimized
+@router.get("", status_code=status.HTTP_200_OK, response_model=List[ConversationDisplay]) # optimized
 def get_conversations(session: SessionDep, current_user: CurrentUser) -> Any:
     conversations = crud.get_all_conversations(session, current_user)
-    return ConversationListPublic(conversations=conversations)
+    return conversations
 
-@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=MessagePagination) # optimized
+@router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=FetchMessagesResponse) # optimized
 def get_messages(session: SessionDep, current_user: CurrentUser, conversation_id: UUID, size: int = 50, cursor: Optional[str] = None) -> Any:
     user_id = current_user.id
 
-    conversation = crud.get_conversation_by_id(session, conversation_id, get_participant=True)
+    conversation = crud.get_conversation_by_id(session, conversation_id)
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     
-    if not next(filter(lambda p: p.user_id == user_id, conversation.participants), False):
+    participants_read_status = crud.get_participants_read_status(session, conversation_id)
+    if user_id not in participants_read_status["participants_last_read_message"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a conversation member")
 
     page = crud.paginate_messages(session, conversation_id, size, cursor)
-    return page
+
+    return FetchMessagesResponse(
+        participants_last_read_message=participants_read_status["participants_last_read_message"],
+        seen_by=participants_read_status["seen_by"],
+        messages=page["messages"],
+        cursor=page["cursor"]
+    )
 
 @router.patch("/{conversation_id}/seen", status_code=status.HTTP_200_OK) # optimized
 async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversation_id: UUID) -> Message:
@@ -81,7 +88,7 @@ async def mark_as_seen(session: SessionDep, current_user: CurrentUser, conversat
         return Message(message="The sender doesn't need to mark as seen")
     
     data = ReadMessageUpdate.from_read_message_update(conversation.id, current_user.id)
-    crud.upd_unread_count(session, user_id, conversation_id)
+    crud.upd_user_seen_status(session, user_id, conversation)
 
     await emit_read_message(conversation_update=data)
 

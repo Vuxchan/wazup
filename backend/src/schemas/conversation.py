@@ -4,7 +4,7 @@ from uuid import UUID
 from datetime import datetime
 from src.models import ConversationType, ConversationParticipant, Message, Conversation, User
 from src.utils import config
-from .message import LastMessagePublic, LastMessageDisplay
+from .message import LastMessagePublic, MessagePublic, LastMessageDisplay
 from .user import UserDisplay
 
 class ConversationCreate(SQLModel):
@@ -54,13 +54,13 @@ class ConversationDisplay(SQLModel):
     def from_conversation_display(cls, row: Any) -> "ConversationDisplay":
         return cls(
             id=row.conversation_id,
-            last_message=LastMessageDisplay(content=row.content, created_at=row.created_at),
+            last_message=LastMessageDisplay(content=row.content, created_at=row.created_at, id=row.last_message_id) if row.last_message_id else None,
         )
 
     model_config = config
 
     id: UUID
-    last_message: LastMessageDisplay
+    last_message: Optional[LastMessageDisplay]
     unread_counts: Dict[UUID, int] = {}
     participants: List[UserDisplay] = []
     type: ConversationType = "direct"
@@ -115,23 +115,13 @@ class ConversationPublic(SQLModel):
     unread_counts: Dict[UUID, int]
     seen_by: List[UUID]
 
-class ConversationListPublic(SQLModel):
-    conversations: List[ConversationDisplay]
-
-class ConversationUpdate(SQLModel):
-    @classmethod
-    def from_conversation_update(cls, last_message: Message) -> "ConversationUpdate":
-        return cls(
-            id=last_message.conversation_id,
-            last_message=LastMessagePublic.from_last_message(last_message),
-            last_message_at=last_message.created_at
-        )
-
+class FetchMessagesResponse(SQLModel):
     model_config = config
 
-    id: UUID
-    last_message: LastMessagePublic
-    last_message_at: datetime
+    participants_last_read_message: Dict[UUID, datetime] = {}
+    seen_by: List[UUID] = []
+    messages: List[MessagePublic]
+    cursor: Optional[str]
 
 class NewMessageUpdate(SQLModel):
     @classmethod

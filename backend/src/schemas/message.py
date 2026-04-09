@@ -28,18 +28,15 @@ class MessagePublic(BaseMessage):
     conversation_id: UUID
     created_at: datetime
 
-class MessagePagination(SQLModel):
-    messages: List[MessagePublic]
-    cursor: Optional[str]
-
 class Message(SQLModel):
     message: str
 
 class LastMessageDisplay(SQLModel):
     model_config = config
 
-    content: Optional[str] = None
-    created_at: Optional[datetime] = None
+    id: UUID
+    content: str
+    created_at: datetime
 
 class LastMessagePublic(SQLModel):
     @classmethod

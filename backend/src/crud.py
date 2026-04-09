@@ -1,13 +1,13 @@
 from sqlmodel import Session, select, and_, or_, func, update, case
 from sqlalchemy.orm import selectinload, aliased
 from src.models import ConversationGroup, Role, Friendship, FriendRequest, Conversation, ConversationParticipant, ConversationType, Message, User
-from src.schemas import MessagePublic, ConversationPublic, MessagePagination, UserCreate, FriendRequestCreate, FriendRequestFilter, ConversationDisplay, UserDisplay, GroupConversationPublic
+from src.schemas import MessagePublic, ConversationPublic, UserCreate, FriendRequestCreate, FriendRequestFilter, ConversationDisplay, UserDisplay, GroupConversationPublic
 from src.core.security import Hasher
 from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
 from uuid import UUID
 from hashlib import sha256
-from typing import Optional, List
+from typing import Optional, List, Dict
 import base64
 
 DUMMY_HASH = "$2b$12$YLLg/ZlJqYLAANUOXuT3OuxYGMXtqgAUNohYmD5BzUJKH7gPpo7Fm"
@@ -257,12 +257,12 @@ def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUI
     conversation_public = ConversationPublic.from_conversation(conversation) if conversation else None
     return conversation_public
 
-def get_all_conversations(session: Session, user: User) -> List[ConversationPublic]:
+def get_all_conversations(session: Session, user: User) -> List[ConversationDisplay]:
     Myself = aliased(ConversationParticipant, name="myself")
     Participant = aliased(ConversationParticipant, name="participant")
 
     statement = (
-        select(Conversation.id.label("conversation_id"), Message.content, Message.created_at, Myself.unread_count, 
+        select(Conversation.id.label("conversation_id"), Message.content, Message.created_at, Message.id.label("last_message_id"), Myself.unread_count, 
                User.id.label("user_id"), User.username, User.avatar_url, User.display_name, ConversationGroup.name, ConversationGroup.created_by, (ConversationGroup.conversation_id.isnot(None)).label("is_group"))
         .select_from(Conversation)
         .join(Myself, 
@@ -277,10 +277,10 @@ def get_all_conversations(session: Session, user: User) -> List[ConversationPubl
         .join(ConversationGroup, isouter=True, onclause=ConversationGroup.conversation_id == Conversation.id)
         .order_by(Conversation.last_message_at.desc())
     )
-    datas = session.exec(statement).all()
+    rows = session.exec(statement).all()
 
     conv_dict = {}
-    for row in datas:
+    for row in rows:
         conversation_id = row.conversation_id
 
         if conversation_id not in conv_dict:
@@ -300,7 +300,25 @@ def get_all_conversations(session: Session, user: User) -> List[ConversationPubl
     conversations = list(conv_dict.values())
     return conversations
 
-def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> MessagePagination:
+def get_participants_read_status(session: Session, conversation_id: UUID) -> dict:
+    statement = (
+        select(ConversationParticipant.user_id, Message.created_at, Message.sender_id)
+        .select_from(ConversationParticipant)
+        .join(Message, isouter=True, onclause=ConversationParticipant.last_read_message_id == Message.id)
+        .where(ConversationParticipant.conversation_id == conversation_id)
+    )
+
+    rows = session.exec(statement).all()
+
+    return {
+        "participants_last_read_message": {
+                row.user_id: row.created_at
+                for row in rows
+            },
+        "seen_by": [row.user_id for row in rows if row.user_id != row.sender_id]
+    }
+
+def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> dict:
     if cursor:
         decoded = base64.b64decode(cursor).decode()
         timestamp_str, msg_id = decoded.split("::")
@@ -329,10 +347,10 @@ def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor
         cursor_raw = f"{last_item.created_at.isoformat()}::{last_item.id}"
         next_cursor = base64.b64encode(cursor_raw.encode()).decode()
 
-    return MessagePagination(
-        messages=[MessagePublic.model_validate(m) for m in items[::-1]],
-        cursor=next_cursor
-    )
+    return {
+        "messages": [MessagePublic.model_validate(m) for m in items[::-1]],
+        "cursor": next_cursor
+    }
 
 def check_friendships(session: Session, user_id: UUID, friend_ids: List[UUID]) -> List[UUID]:
     friend_ids = set(friend_ids)
@@ -362,16 +380,16 @@ def get_conversation_ids(session: Session, user_id: UUID) -> List[str]:
     result = [str(cid) for cid in conversation_ids]
     return result
 
-def upd_unread_count(session: Session, participant_id: UUID, conversation_id: UUID) -> None:
+def upd_user_seen_status(session: Session, participant_id: UUID, conversation: Conversation) -> None:
     statement = (
         update(ConversationParticipant)
         .where(
             and_(
                 ConversationParticipant.user_id == participant_id, 
-                ConversationParticipant.conversation_id == conversation_id,
+                ConversationParticipant.conversation_id == conversation.id,
                 ConversationParticipant.unread_count > 0
             )
-        ).values(unread_count=0)
+        ).values(unread_count=0, last_read_message_id=conversation.last_message_id)
     )
     session.exec(statement)
     session.commit()
