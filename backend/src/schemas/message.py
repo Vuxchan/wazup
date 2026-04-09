@@ -35,6 +35,12 @@ class MessagePagination(SQLModel):
 class Message(SQLModel):
     message: str
 
+class LastMessageDisplay(SQLModel):
+    model_config = config
+
+    content: Optional[str] = None
+    created_at: Optional[datetime] = None
+
 class LastMessagePublic(SQLModel):
     @classmethod
     def from_last_message(cls, last_message: Message, sender: User) -> "LastMessagePublic":

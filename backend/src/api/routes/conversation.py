@@ -46,10 +46,9 @@ async def create_conversation(session: SessionDep, current_user: CurrentUser, da
 
     return conversation
 
-@router.get("", status_code=status.HTTP_200_OK, response_model=ConversationListPublic)
+@router.get("", status_code=status.HTTP_200_OK, response_model=ConversationListPublic) # optimized
 def get_conversations(session: SessionDep, current_user: CurrentUser) -> Any:
-    user_id = current_user.id
-    conversations = crud.get_all_conversations(session, user_id)
+    conversations = crud.get_all_conversations(session, current_user)
     return ConversationListPublic(conversations=conversations)
 
 @router.get("/{conversation_id}/messages", status_code=status.HTTP_200_OK, response_model=MessagePagination) # optimized

@@ -1,7 +1,7 @@
 from sqlmodel import Session, select, and_, or_, func, update, case
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
 from src.models import ConversationGroup, Role, Friendship, FriendRequest, Conversation, ConversationParticipant, ConversationType, Message, User
-from src.schemas import MessagePublic, ConversationPublic, MessagePagination, UserCreate, FriendRequestCreate, FriendRequestFilter
+from src.schemas import MessagePublic, ConversationPublic, MessagePagination, UserCreate, FriendRequestCreate, FriendRequestFilter, ConversationDisplay, UserDisplay, GroupConversationPublic
 from src.core.security import Hasher
 from datetime import timedelta, datetime, timezone
 from src.models.sessions import Sessions
@@ -257,18 +257,48 @@ def get_direct_conversation(session: Session, sender_id: UUID, recipient_id: UUI
     conversation_public = ConversationPublic.from_conversation(conversation) if conversation else None
     return conversation_public
 
-def get_all_conversations(session: Session, user_id: UUID) -> List[ConversationPublic]:
+def get_all_conversations(session: Session, user: User) -> List[ConversationPublic]:
+    Myself = aliased(ConversationParticipant, name="myself")
+    Participant = aliased(ConversationParticipant, name="participant")
+
     statement = (
-        select(Conversation)
-        .options(selectinload(Conversation.participants).selectinload(ConversationParticipant.user))
-        .options(selectinload(Conversation.last_message).selectinload(Message.sender))
-        .options(selectinload(Conversation.group))
-        .join(ConversationParticipant)
-        .where(ConversationParticipant.user_id == user_id)
+        select(Conversation.id.label("conversation_id"), Message.content, Message.created_at, Myself.unread_count, 
+               User.id.label("user_id"), User.username, User.avatar_url, User.display_name, ConversationGroup.name, ConversationGroup.created_by, (ConversationGroup.conversation_id.isnot(None)).label("is_group"))
+        .select_from(Conversation)
+        .join(Myself, 
+            and_(
+                    Conversation.id == Myself.conversation_id,
+                    Myself.user_id == user.id
+            )
+        )
+        .join(Participant, Conversation.id == Participant.conversation_id)
+        .join(User, Participant.user_id == User.id)
+        .join(Message, isouter=True, onclause=Conversation.last_message_id == Message.id)
+        .join(ConversationGroup, isouter=True, onclause=ConversationGroup.conversation_id == Conversation.id)
         .order_by(Conversation.last_message_at.desc())
     )
-    conversations = session.exec(statement).all()
-    return [ConversationPublic.from_conversation(c) for c in conversations]
+    datas = session.exec(statement).all()
+
+    conv_dict = {}
+    for row in datas:
+        conversation_id = row.conversation_id
+
+        if conversation_id not in conv_dict:
+            conv_dict[conversation_id] = ConversationDisplay.from_conversation_display(row)
+
+            if row.is_group:
+                conv_dict[conversation_id].type = "group"
+                conv_dict[conversation_id].group = GroupConversationPublic(created_by=row.created_by, name=row.name)
+
+        conv_dict[conversation_id].participants.append(UserDisplay(id=row.user_id, username=row.username, display_name=row.display_name, avatar_url=row.avatar_url))
+
+        if row.user_id == user.id:
+            conv_dict[conversation_id].unread_counts = {
+                user.id: row.unread_count
+            }
+
+    conversations = list(conv_dict.values())
+    return conversations
 
 def paginate_messages(session: Session, conversation_id: UUID, size: int, cursor: Optional[str]) -> MessagePagination:
     if cursor:

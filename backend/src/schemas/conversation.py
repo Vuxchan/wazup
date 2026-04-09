@@ -1,10 +1,11 @@
 from sqlmodel import SQLModel
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
 from src.models import ConversationType, ConversationParticipant, Message, Conversation, User
 from src.utils import config
-from .message import LastMessagePublic
+from .message import LastMessagePublic, LastMessageDisplay
+from .user import UserDisplay
 
 class ConversationCreate(SQLModel):
     model_config = config
@@ -47,6 +48,23 @@ class GroupConversationPublic(SQLModel):
     created_by: UUID
     name: str
     # avatar_group_url: Optional[str] = None
+
+class ConversationDisplay(SQLModel):
+    @classmethod
+    def from_conversation_display(cls, row: Any) -> "ConversationDisplay":
+        return cls(
+            id=row.conversation_id,
+            last_message=LastMessageDisplay(content=row.content, created_at=row.created_at),
+        )
+
+    model_config = config
+
+    id: UUID
+    last_message: LastMessageDisplay
+    unread_counts: Dict[UUID, int] = {}
+    participants: List[UserDisplay] = []
+    type: ConversationType = "direct"
+    group: Optional[GroupConversationPublic] = None
 
 class ConversationPublic(SQLModel):
     @classmethod
@@ -98,7 +116,7 @@ class ConversationPublic(SQLModel):
     seen_by: List[UUID]
 
 class ConversationListPublic(SQLModel):
-    conversations: List[ConversationPublic]
+    conversations: List[ConversationDisplay]
 
 class ConversationUpdate(SQLModel):
     @classmethod
